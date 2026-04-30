@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
@@ -16,7 +16,6 @@ const Wishlist: React.FC = () => {
   const bestsellerIds = useSiteStore(state => state.bestsellerIds);
   const addToCart = useCartStore(state => state.addToCart);
   const [showCheckout, setShowCheckout] = React.useState(false);
-  const navigate = useNavigate();
 
   const wishlistedProducts = products.filter(p => profile?.wishlist?.includes(p.id));
 

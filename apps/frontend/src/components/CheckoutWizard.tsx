@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, Smartphone, MapPin, CreditCard, Loader, Navigation, Building, Map, Plus, ChevronRight, User } from 'lucide-react';
+import { X, CheckCircle, Smartphone, MapPin, CreditCard, Loader, Plus, ChevronRight, User } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 import { useOrderStore } from '../store/useOrderStore';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Address } from '../store/useAuthStore';
-import { useCouponStore } from '../store/useCouponStore';
 import './CheckoutWizard.css';
 
 interface CheckoutWizardProps {
@@ -15,7 +14,6 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   const { items, getCartTotal, clearCart } = useCartStore();
   const { createOrder, orders, fetchOrders } = useOrderStore();
   const { user, profile, addAddress } = useAuthStore();
-  const validateCoupon = useCouponStore(state => state.validateCoupon);
   const [step, setStep] = useState<number>(1);
   
   // Form State
@@ -51,8 +49,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   
   // Discount State
   const [discountPercent, setDiscountPercent] = useState<number>(0);
-  const [couponCode, setCouponCode] = useState('');
-  const [couponMessage, setCouponMessage] = useState('');
+  const [couponCode] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -63,7 +60,6 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   useEffect(() => {
     if (user && orders.length === 0 && discountPercent === 0) {
       setDiscountPercent(10);
-      setCouponMessage('🎉 First Order 10% Discount Auto-Applied!');
     }
   }, [user, orders, discountPercent]);
 
@@ -82,7 +78,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
 
   // OTP Timer Logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (step === 2 && timer > 0 && otpState !== 'success') {
       interval = setInterval(() => setTimer(prev => prev - 1), 1000);
     }
@@ -103,17 +99,6 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
     }
   }, [address.pincode]);
 
-  const handleApplyCoupon = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!couponCode.trim()) return;
-    const pct = await validateCoupon(couponCode);
-    if (pct) {
-      setDiscountPercent(pct);
-      setCouponMessage(`✅ ${pct}% Discount Applied!`);
-    } else {
-      setCouponMessage('❌ Invalid or expired coupon code.');
-    }
-  };
 
   const originalTotal = getCartTotal();
   const finalTotal = Math.round(originalTotal - (originalTotal * (discountPercent / 100)));
@@ -353,7 +338,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
 
                   <div className="form-row" style={{ marginTop: '10px' }}>
                     <button type="submit" className="btn-primary tm-btn" style={{ flex: 2 }}>SAVE & DELIVER</button>
-                    {profile?.addresses?.length > 0 && (
+                    {(profile?.addresses?.length ?? 0) > 0 && (
                       <button type="button" className="btn-secondary tm-btn" style={{ flex: 1 }} onClick={() => setShowNewAddressForm(false)}>CANCEL</button>
                     )}
                   </div>
