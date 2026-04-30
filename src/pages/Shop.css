@@ -1,0 +1,20 @@
+.shop-header {
+  background-color: var(--bg-dark);
+  color: var(--primary-yellow);
+  padding: 60px 0;
+  text-align: center;
+}
+
+.shop-header h1 {
+  font-size: 4rem;
+  margin-bottom: 10px;
+}
+
+.shop-header p {
+  color: var(--text-light);
+  font-size: 1.2rem;
+}
+
+.shop-container {
+  padding: 60px 20px;
+}

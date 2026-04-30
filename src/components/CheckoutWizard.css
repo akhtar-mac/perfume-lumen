@@ -1,0 +1,193 @@
+.checkout-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  backdrop-filter: blur(5px);
+}
+
+.checkout-modal {
+  background-color: var(--bg-light);
+  width: 90%;
+  max-width: 450px;
+  border-radius: 12px;
+  padding: 40px;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+.close-wizard {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--text-dark);
+  color: white;
+  border: 3px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 10;
+}
+
+.close-wizard:hover {
+  transform: translate(-2px, -2px) rotate(90deg);
+  box-shadow: 5px 5px 0px rgba(0,0,0,0.25);
+  background: var(--accent-pink);
+}
+
+.close-wizard:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+}
+
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.step-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #eee;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.step-dot.active {
+  background-color: var(--accent-blue);
+  color: white;
+}
+
+.step-line {
+  height: 2px;
+  width: 40px;
+  background-color: #eee;
+  transition: background-color 0.3s ease;
+}
+
+.step-line.active {
+  background-color: var(--accent-blue);
+}
+
+.wizard-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.wizard-form h2 {
+  font-size: 2rem;
+  color: var(--text-dark);
+  margin-bottom: 5px;
+}
+
+.wizard-form p {
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.wizard-form input {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  background-color: #fff;
+}
+
+.wizard-form input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(17, 138, 178, 0.1);
+}
+
+.wizard-form .btn-primary {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--accent-blue);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.text-btn:hover {
+  text-decoration: underline;
+}
+
+.mock-payment-box {
+  background-color: #f9f9f9;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 20px;
+}
+
+.wizard-success {
+  padding: 20px 0;
+}
+
+.wizard-success h2 {
+  font-size: 2.2rem;
+  color: var(--accent-green);
+  margin: 15px 0 10px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* OTP shake animation */
+.otp-shake {
+  animation: otpShake 0.5s ease;
+}
+
+@keyframes otpShake {
+  0%   { transform: translateX(0); }
+  15%  { transform: translateX(-8px); }
+  30%  { transform: translateX(8px); }
+  45%  { transform: translateX(-6px); }
+  60%  { transform: translateX(6px); }
+  75%  { transform: translateX(-3px); }
+  90%  { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}

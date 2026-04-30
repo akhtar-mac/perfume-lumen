@@ -1,0 +1,35 @@
+.announcement-bar {
+  background-color: var(--primary-yellow);
+  color: var(--bg-dark);
+  padding: 8px 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 100;
+}
+
+.marquee {
+  display: flex;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.marquee-content {
+  display: flex;
+  animation: scroll 20s linear infinite;
+}
+
+.marquee-content span {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0 30px;
+  text-transform: uppercase;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

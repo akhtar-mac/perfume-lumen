@@ -1,0 +1,82 @@
+.whatsapp-widget {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  color: white;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  /* Comic-style border + shadow to pop on white bg */
+  border: 3px solid var(--text-dark);
+  box-shadow: 4px 4px 0px var(--text-dark);
+
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+
+  /* Pulse ring animation */
+  animation: whatsappPulse 2.5s ease-in-out infinite;
+}
+
+.whatsapp-widget:hover {
+  transform: translate(-3px, -3px) scale(1.08) rotate(8deg);
+  box-shadow: 7px 7px 0px var(--text-dark);
+}
+
+.whatsapp-widget:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px var(--text-dark);
+}
+
+/* Subtle outer ring pulse */
+@keyframes whatsappPulse {
+  0%, 100% {
+    box-shadow: 4px 4px 0px var(--text-dark), 0 0 0 0 rgba(37, 211, 102, 0.4);
+  }
+  50% {
+    box-shadow: 4px 4px 0px var(--text-dark), 0 0 0 10px rgba(37, 211, 102, 0);
+  }
+}
+
+/* Tooltip label */
+.whatsapp-widget::before {
+  content: "Chat with us!";
+  position: absolute;
+  right: 75px;
+  background: var(--text-dark);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 2px solid var(--text-dark);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(8px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.whatsapp-widget:hover::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+  .whatsapp-widget {
+    bottom: 20px;
+    right: 20px;
+    width: 54px;
+    height: 54px;
+  }
+
+  .whatsapp-widget::before {
+    display: none;
+  }
+}
