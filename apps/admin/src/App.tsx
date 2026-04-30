@@ -1,20 +1,14 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
-import Home from './pages/Home';
-import Shop from './pages/Shop';
-import ProductDetail from './pages/ProductDetail';
-import Cart from './pages/Cart';
-import Contact from './pages/Contact';
 import Admin from './pages/Admin';
-import Profile from './pages/Profile';
 import { useSiteStore } from './store/useSiteStore';
 import { useProductStore } from './store/useProductStore';
 import { useAuthStore } from './store/useAuthStore';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
-  const { themePrimaryYellow, themeAccentPink, themeAccentBlue, fetchSettings, incrementVisitor } = useSiteStore();
+  const { themePrimaryYellow, themeAccentPink, themeAccentBlue, fetchSettings } = useSiteStore();
   const { fetchProducts } = useProductStore();
   const initializeAuth = useAuthStore(state => state.initialize);
 
@@ -22,12 +16,6 @@ function App() {
     fetchSettings();
     fetchProducts();
     initializeAuth();
-    
-    // Visitor tracking
-    if (!sessionStorage.getItem('hasVisited')) {
-      incrementVisitor();
-      sessionStorage.setItem('hasVisited', 'true');
-    }
   }, []);
 
   useEffect(() => {
@@ -40,13 +28,8 @@ function App() {
       <Router>
         <ScrollToTop />
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/" element={<Admin />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </ErrorBoundary>

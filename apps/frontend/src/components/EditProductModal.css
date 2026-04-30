@@ -1,0 +1,84 @@
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  backdrop-filter: blur(5px);
+}
+
+.admin-modal-content {
+  background-color: var(--bg-light);
+  width: 90%;
+  max-width: 600px;
+  border-radius: 8px;
+  padding: 40px;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  animation: slideUp 0.3s ease forwards;
+}
+
+.admin-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: #555;
+}
+
+.admin-modal-close:hover {
+  color: var(--bg-dark);
+}
+
+.admin-modal-content h2 {
+  font-size: 2rem;
+  margin-bottom: 25px;
+  color: var(--bg-dark);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.admin-modal-content label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.admin-modal-content input,
+.admin-modal-content textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+}
+
+.admin-modal-content input:focus,
+.admin-modal-content textarea:focus {
+  outline: none;
+  border-color: var(--bg-dark);
+}
+
+.admin-modal-content small {
+  display: block;
+  margin-top: 5px;
+  color: #777;
+  font-size: 0.8rem;
+}
