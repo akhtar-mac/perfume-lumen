@@ -28,6 +28,21 @@ function App() {
       incrementVisitor();
       sessionStorage.setItem('hasVisited', 'true');
     }
+
+    // Ping Render Backend to verify connection
+    const checkBackend = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL;
+        if (apiUrl) {
+          const res = await fetch(`${apiUrl}/api/health`);
+          const data = await res.json();
+          console.log('🔗 Backend Connected:', data);
+        }
+      } catch (err) {
+        console.warn('⚠️ Backend connection pending or VITE_API_URL not set in Vercel.');
+      }
+    };
+    checkBackend();
   }, []);
 
   useEffect(() => {
