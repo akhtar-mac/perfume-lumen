@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 import { User, Package, MapPin, Heart, LogOut, Settings, Save, Lock } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
@@ -142,7 +140,6 @@ const Profile: React.FC = () => {
   if (!user) {
     return (
       <div className="profile-page">
-        <Header />
         <div className="container" style={{ padding: '100px 20px', textAlign: 'center', minHeight: '60vh' }}>
           <User size={64} color="var(--accent-blue)" style={{ marginBottom: '20px' }} />
           <h1>Account Login Required</h1>
@@ -151,7 +148,6 @@ const Profile: React.FC = () => {
             LOGIN / SIGN UP
           </button>
         </div>
-        <Footer />
         {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       </div>
     );
@@ -171,7 +167,6 @@ const Profile: React.FC = () => {
 
   return (
     <div className="profile-page">
-      <Header />
       <div className="container profile-container">
         <div className="profile-sidebar">
           <div className="profile-user-info">
@@ -435,7 +430,6 @@ const Profile: React.FC = () => {
           )}
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

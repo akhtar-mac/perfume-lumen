@@ -1,12 +1,24 @@
 .header {
   position: absolute;
-  top: 35px; /* Sits below Announcement Bar initially */
+  top: 40px;
   left: 0;
   width: 100%;
   background-color: transparent;
   border-bottom: none;
   z-index: 1000;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-layout {
+  position: relative;
+  padding-top: 0;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 80px;
 }
 
 .header.scrolled {
@@ -17,8 +29,17 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
+.header.not-home {
+  position: fixed;
+  top: 40px;
+  background-color: var(--bg-light);
+  border-bottom: 2px solid var(--text-dark);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
 
-
+.header.not-home.scrolled {
+  top: 0;
+}
 
 .header-container {
   display: flex;
@@ -110,11 +131,15 @@
 
 .header.scrolled .logo,
 .header.scrolled .icon-btn,
-.header.scrolled .mobile-toggle {
+.header.scrolled .mobile-toggle,
+.header.not-home .logo,
+.header.not-home .icon-btn,
+.header.not-home .mobile-toggle {
   color: var(--text-dark);
 }
 
-.header.scrolled .logo {
+.header.scrolled .logo,
+.header.not-home .logo {
   text-shadow: none;
 }
 

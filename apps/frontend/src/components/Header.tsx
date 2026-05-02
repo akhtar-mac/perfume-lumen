@@ -6,7 +6,11 @@ import { useProductStore } from '../store/useProductStore';
 import { useAuthStore } from '../store/useAuthStore';
 import './Header.css';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  isHomePage?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ isHomePage = true }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -42,7 +46,7 @@ const Header: React.FC = () => {
   }, [mobileMenuOpen]);
 
   return (
-    <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
+    <header className={`header ${isScrolled ? 'scrolled' : ''} ${!isHomePage ? 'not-home' : ''}`}>
       <div className="container header-container">
         
         <div className="mobile-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>

@@ -1,7 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 import CheckoutWizard from '../components/CheckoutWizard';
 import { useAuthStore } from '../store/useAuthStore';
@@ -38,7 +36,6 @@ const Wishlist: React.FC = () => {
 
   return (
     <div className="wishlist-page">
-      <Header />
       <div className="wishlist-header">
         <div className="container">
           <h1>YOUR WISHLIST 💖</h1>
@@ -90,7 +87,6 @@ const Wishlist: React.FC = () => {
 
       {showCheckout && <CheckoutWizard onClose={() => setShowCheckout(false)} />}
       
-      <Footer />
     </div>
   );
 };

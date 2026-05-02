@@ -1,12 +1,9 @@
 import React from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import './Contact.css';
 
 const Contact: React.FC = () => {
   return (
     <div className="contact-page">
-      <Header />
       <div className="container contact-container">
         <div className="contact-info">
           <h1>GET IN TOUCH</h1>
@@ -33,7 +30,6 @@ const Contact: React.FC = () => {
           </form>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

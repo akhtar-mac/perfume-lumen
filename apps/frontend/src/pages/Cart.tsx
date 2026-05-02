@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus } from 'lucide-react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { useCartStore } from '../store/useCartStore';
 import CheckoutWizard from '../components/CheckoutWizard';
 import './Cart.css';
@@ -13,7 +11,6 @@ const Cart: React.FC = () => {
 
   return (
     <div className="cart-page">
-      <Header />
       <div className="container cart-container">
         <h1>YOUR CART 🛒</h1>
         
@@ -72,7 +69,6 @@ const Cart: React.FC = () => {
       
       {showCheckout && <CheckoutWizard onClose={() => setShowCheckout(false)} />}
       
-      <Footer />
     </div>
   );
 };

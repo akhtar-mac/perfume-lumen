@@ -1,6 +1,4 @@
 import React from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 import { useProductStore } from '../store/useProductStore';
 import { useSiteStore } from '../store/useSiteStore';
@@ -41,7 +39,6 @@ const Shop: React.FC = () => {
 
   return (
     <div className="shop-page">
-      <Header />
       <div className="shop-header">
         <div className="container">
           <h1>ALL PERFUMES 🛍️</h1>
@@ -86,7 +83,6 @@ const Shop: React.FC = () => {
           ))}
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

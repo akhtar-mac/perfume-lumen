@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
 import { useProductStore } from '../store/useProductStore';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -22,13 +20,11 @@ const ProductDetail: React.FC = () => {
   if (!product) {
     return (
       <div className="product-detail-page">
-        <Header />
         <div className="container" style={{ padding: '100px 20px', textAlign: 'center' }}>
           <h2>Product Not Found</h2>
           <button className="btn-primary" onClick={() => navigate('/shop')} style={{ marginTop: '20px' }}>BACK TO SHOP</button>
         </div>
-        <Footer />
-      </div>
+        </div>
     );
   }
 
@@ -53,7 +49,6 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="product-detail-page">
-      <Header />
       <div className="container detail-container">
         <div className="detail-image-col">
           <div className="detail-image-wrapper">
@@ -130,7 +125,6 @@ const ProductDetail: React.FC = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

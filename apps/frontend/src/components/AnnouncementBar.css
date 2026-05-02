@@ -1,9 +1,13 @@
 .announcement-bar {
   background-color: var(--primary-yellow);
-  color: var(--bg-dark);
-  padding: 8px 0;
+  color: var(--text-dark);
+  height: 40px;
+  display: flex;
+  align-items: center;
   overflow: hidden;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   z-index: 1002;
   border-bottom: 2px solid var(--text-dark);

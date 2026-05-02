@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import { useSiteStore } from './store/useSiteStore';
 import { useProductStore } from './store/useProductStore';
 import { useAuthStore } from './store/useAuthStore';
+import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
@@ -54,15 +55,17 @@ function App() {
     <ErrorBoundary>
       <Router>
         <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/profile" element={<Profile />} />
-        </Routes>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/profile" element={<Profile />} />
+          </Routes>
+        </Layout>
       </Router>
     </ErrorBoundary>
   );
