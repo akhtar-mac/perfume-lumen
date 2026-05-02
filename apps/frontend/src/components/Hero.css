@@ -1,7 +1,8 @@
 .hero {
   position: relative;
-  height: calc(100vh - 80px); /* viewport minus header */
+  height: 100vh;
   display: flex;
+
   align-items: center;
   justify-content: center;
   text-align: center;

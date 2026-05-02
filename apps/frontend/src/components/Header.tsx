@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingBag, User, Menu, X, Heart } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X, Heart, MessageCircle } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 import { useProductStore } from '../store/useProductStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -11,6 +11,7 @@ const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
   const cartCount = useCartStore(state => state.getCartCount());
   const profile = useAuthStore(state => state.profile);
   const wishlistCount = profile?.wishlist?.length || 0;
@@ -19,7 +20,7 @@ const Header: React.FC = () => {
 
   const filteredProducts = products.filter(p => 
     p.title.toLowerCase().includes(searchQuery.toLowerCase())
-  ).slice(0, 5); // show max 5 in dropdown
+  ).slice(0, 5);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +29,17 @@ const Header: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
@@ -40,11 +52,32 @@ const Header: React.FC = () => {
         <Link to="/" className="logo">LUMEN.</Link>
 
         <nav className={`main-nav ${mobileMenuOpen ? 'open' : ''}`}>
-          <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/shop">Shop</Link></li>
-            <li><Link to="/contact">Contact</Link></li>
-          </ul>
+          <div className="mobile-menu-content">
+            <ul className="nav-links">
+              <li><Link to="/" onClick={() => setMobileMenuOpen(false)}>Home</Link></li>
+              <li><Link to="/shop" onClick={() => setMobileMenuOpen(false)}>Shop Collection</Link></li>
+              <li><Link to="/contact" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link></li>
+              <li><Link to="/profile" onClick={() => setMobileMenuOpen(false)}>My Profile</Link></li>
+            </ul>
+            
+            <div className="mobile-menu-footer">
+              <div className="social-links">
+                {/* Instagram SVG */}
+                <a href="#" className="social-icon" aria-label="Instagram">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                </a>
+                {/* Facebook SVG */}
+                <a href="#" className="social-icon" aria-label="Facebook">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                </a>
+                {/* WhatsApp SVG (Lucide MessageCircle) */}
+                <a href="#" className="social-icon" aria-label="WhatsApp">
+                  <MessageCircle size={20} />
+                </a>
+              </div>
+              <p className="menu-tagline">India's Finest Designer Recreations ✨</p>
+            </div>
+          </div>
         </nav>
 
         <div className="header-actions">
@@ -91,7 +124,7 @@ const Header: React.FC = () => {
             <Heart size={22} />
             {wishlistCount > 0 && <span className="cart-count">{wishlistCount}</span>}
           </Link>
-          <Link to="/profile" className="icon-btn"><User size={22} /></Link>
+          
           <Link to="/cart" className="icon-btn cart-btn">
             <ShoppingBag size={22} />
             <span className="cart-count">{cartCount}</span>
@@ -99,6 +132,7 @@ const Header: React.FC = () => {
         </div>
 
       </div>
+      {mobileMenuOpen && <div className="mobile-overlay" onClick={() => setMobileMenuOpen(false)}></div>}
     </header>
   );
 };

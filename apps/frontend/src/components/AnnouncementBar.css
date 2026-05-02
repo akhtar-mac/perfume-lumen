@@ -4,8 +4,12 @@
   padding: 8px 0;
   overflow: hidden;
   position: relative;
-  z-index: 100;
+  width: 100%;
+  z-index: 1002;
+  border-bottom: 2px solid var(--text-dark);
 }
+
+
 
 .marquee {
   display: flex;
