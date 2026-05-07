@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, ShoppingBag, Menu, X, Heart, MessageCircle } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 import { useProductStore } from '../store/useProductStore';
@@ -21,10 +21,17 @@ const Header: React.FC<HeaderProps> = ({ isHomePage = true }) => {
   const wishlistCount = profile?.wishlist?.length || 0;
   const products = useProductStore(state => state.products);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const filteredProducts = products.filter(p => 
     p.title.toLowerCase().includes(searchQuery.toLowerCase())
   ).slice(0, 5);
+
+  useEffect(() => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    setIsScrolled(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,7 +56,10 @@ const Header: React.FC<HeaderProps> = ({ isHomePage = true }) => {
     <header className={`header ${isScrolled ? 'scrolled' : ''} ${!isHomePage ? 'not-home' : ''}`}>
       <div className="container header-container">
         
-        <div className="mobile-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <div className="mobile-toggle" onClick={() => {
+          setMobileMenuOpen(!mobileMenuOpen);
+          if (!mobileMenuOpen) setSearchOpen(false);
+        }}>
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </div>
 
@@ -86,7 +96,10 @@ const Header: React.FC<HeaderProps> = ({ isHomePage = true }) => {
 
         <div className="header-actions">
           <div className="search-container">
-            <button className="icon-btn" onClick={() => setSearchOpen(!searchOpen)}>
+            <button className="icon-btn" onClick={() => {
+              setSearchOpen(!searchOpen);
+              if (!searchOpen) setMobileMenuOpen(false);
+            }}>
               {searchOpen ? <X size={22} /> : <Search size={22} />}
             </button>
             {searchOpen && (
