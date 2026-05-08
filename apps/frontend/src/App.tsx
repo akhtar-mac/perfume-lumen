@@ -8,6 +8,7 @@ import Cart from './pages/Cart';
 import Contact from './pages/Contact';
 import Wishlist from './pages/Wishlist';
 import Profile from './pages/Profile';
+import ProfileSetup from './pages/ProfileSetup';
 import { useSiteStore } from './store/useSiteStore';
 import { useProductStore } from './store/useProductStore';
 import { useAuthStore } from './store/useAuthStore';
@@ -64,6 +65,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile-setup" element={<ProfileSetup />} />
           </Routes>
         </Layout>
       </Router>

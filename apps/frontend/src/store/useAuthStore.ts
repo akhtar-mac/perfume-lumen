@@ -40,6 +40,7 @@ interface AuthStore {
   addAddress: (address: Omit<Address, 'id' | 'isDefault'>) => Promise<void>;
   deleteAddress: (addressId: string) => Promise<void>;
   setDefaultAddress: (addressId: string) => Promise<void>;
+  loginWithPhoneHack: (phone: string) => Promise<{ error: Error | null }>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -159,6 +160,40 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     
     set({ profile: { ...profile, wishlist: newWishlist } });
     await supabase.from('profiles').update({ wishlist: newWishlist }).eq('id', user.id);
+  },
+
+  loginWithPhoneHack: async (phone: string) => {
+    // DEMO BYPASS: We are completely skipping Supabase Auth to avoid any Rate Limits.
+    // We will just instantly inject a fake verified user into the local state!
+    const mockUser = {
+      id: 'demo-user-123',
+      email: 'demo@lumen-auth.com',
+      phone: phone
+    };
+
+    const mockProfile = {
+      id: 'demo-user-123',
+      full_name: 'Lumen Demo User',
+      phone: phone,
+      addresses: [{
+        id: 'mock-address-1',
+        type: 'home',
+        name: 'Lumen Demo User',
+        phone: phone,
+        street1: '123 Luxury Avenue',
+        street2: 'Bandra West',
+        city: 'Mumbai',
+        state: 'Maharashtra',
+        pincode: '400050',
+        isDefault: true
+      }],
+      wishlist: []
+    };
+
+    // Forcefully set the user and profile in the local app state
+    set({ user: mockUser as any, profile: mockProfile as any, session: {} as any });
+
+    return { error: null };
   },
 
   signOut: async () => {

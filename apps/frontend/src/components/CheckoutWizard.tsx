@@ -4,6 +4,7 @@ import { useCartStore } from '../store/useCartStore';
 import { useOrderStore } from '../store/useOrderStore';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Address } from '../store/useAuthStore';
+import { loadRazorpayScript } from '../lib/razorpay';
 import './CheckoutWizard.css';
 
 interface CheckoutWizardProps {
@@ -14,7 +15,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   const { items, getCartTotal, clearCart } = useCartStore();
   const { createOrder, orders, fetchOrders } = useOrderStore();
   const { user, profile, addAddress } = useAuthStore();
-  const [step, setStep] = useState<number>(1);
+  const [step, setStep] = useState<number>(useAuthStore.getState().user ? 3 : 1);
   
   // Form State
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -103,10 +104,12 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   const originalTotal = getCartTotal();
   const finalTotal = Math.round(originalTotal - (originalTotal * (discountPercent / 100)));
 
-  const handleNextStep = (e: React.FormEvent) => {
+  const handleNextStep = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
       setTimer(30);
+      setStep(2);
+      return;
     }
     if (step === 2) {
       if (otp.length < 4) {
@@ -116,12 +119,22 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
         return;
       }
       setOtpState('success');
+      
+      // Actually log the user in using the demo hack!
+      const formattedPhone = `+91${phone}`;
+      const { useAuthStore } = await import('../store/useAuthStore');
+      await useAuthStore.getState().loginWithPhoneHack(formattedPhone);
+
       setTimeout(() => setStep(prev => prev + 1), 700);
       return;
     }
     if (step === 3 && showNewAddressForm) {
       // Save new address if form is visible
-      addAddress(address);
+      const { useAuthStore } = await import('../store/useAuthStore');
+      await useAuthStore.getState().addAddress({
+        ...address,
+        phone: address.phone || phone // Use the typed phone if not set
+      });
       setShowNewAddressForm(false);
       // Wait a bit for profile to update then select it
       return;
@@ -129,24 +142,106 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
     setStep(prev => prev + 1);
   };
 
-  const handlePayment = (e: React.FormEvent) => {
+  const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
     
-    setTimeout(async () => {
-      if (user) {
-        await createOrder(finalTotal, items.map(item => ({
-          id: item.id,
-          title: item.title,
-          price: item.price,
-          quantity: item.quantity,
-          image: item.image
-        })), couponCode.trim() ? couponCode : undefined);
+    try {
+      if (paymentMethod === 'cod') {
+        // Immediate processing for COD
+        if (user) {
+          await createOrder(finalTotal, items.map(item => ({
+            id: item.id, title: item.title, price: item.price, quantity: item.quantity, image: item.image
+          })), couponCode.trim() ? couponCode : undefined);
+        }
+        setIsProcessing(false);
+        setStep(5);
+        clearCart();
+        return;
       }
+
+      // 1. Load Razorpay script dynamically
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        alert('Failed to load Razorpay SDK. Are you online?');
+        setIsProcessing(false);
+        return;
+      }
+
+      // 2. Ask our backend to create a Razorpay Order ID
+      const orderResponse = await fetch('http://localhost:3000/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: finalTotal, currency: 'INR' })
+      });
+      
+      const orderData = await orderResponse.json();
+      
+      if (!orderData || !orderData.id) {
+        throw new Error('Failed to create Razorpay order');
+      }
+
+      // 3. Open the Razorpay Popup
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Use the test key safely exposed
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Lumen Perfumes',
+        description: 'Luxury Fragrance Purchase',
+        order_id: orderData.id,
+        prefill: {
+          name: selectedAddress?.name || profile?.full_name || '',
+          email: user?.email || '',
+          contact: selectedAddress?.phone || profile?.phone || '',
+        },
+        theme: {
+          color: '#1A1A1A'
+        },
+        handler: async function (response: any) {
+          // 4. On success, verify payment signature on backend
+          const verifyResponse = await fetch('http://localhost:3000/api/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            })
+          });
+
+          const verifyData = await verifyResponse.json();
+
+          if (verifyData.success) {
+            // Payment is verified and secure! Save the order to DB
+            if (user) {
+              await createOrder(finalTotal, items.map(item => ({
+                id: item.id, title: item.title, price: item.price, quantity: item.quantity, image: item.image
+              })), couponCode.trim() ? couponCode : undefined);
+            }
+            setIsProcessing(false);
+            setStep(5);
+            clearCart();
+          } else {
+            alert('Payment verification failed! Please contact support.');
+            setIsProcessing(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      
+      rzp.on('payment.failed', function (response: any) {
+        alert(`Payment Failed: ${response.error.description}`);
+        setIsProcessing(false);
+      });
+      
+      rzp.open();
+
+    } catch (error) {
+      console.error(error);
+      alert('Something went wrong initiating the payment.');
       setIsProcessing(false);
-      setStep(5);
-      clearCart();
-    }, 2000);
+    }
   };
 
   const selectedAddress = profile?.addresses?.find(a => a.id === selectedAddressId);

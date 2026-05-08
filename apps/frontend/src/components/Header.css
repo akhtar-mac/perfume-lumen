@@ -288,6 +288,10 @@
     z-index: 10;
   }
 
+  .logo:hover {
+    transform: translateX(-50%) scale(1.05);
+  }
+
 
   .main-nav {
     position: fixed;

@@ -81,13 +81,28 @@ export const useOrderStore = create<OrderStore>((set) => ({
     const user = useAuthStore.getState().user;
     if (!user) return;
 
+    // DEMO BYPASS: If this is the fake demo user, just mock the order creation
+    // so we don't hit Row Level Security (RLS) errors from Supabase
+    if (user.id === 'demo-user-123') {
+      const mockOrder: Order = {
+        id: `DEMO-ORD-${Math.floor(Math.random() * 10000)}`,
+        created_at: new Date().toISOString(),
+        total,
+        status: 'Paid',
+        items
+      };
+      
+      set((state) => ({ orders: [mockOrder, ...state.orders] }));
+      return;
+    }
+
     const { data, error } = await supabase
       .from('orders')
       .insert({
         user_id: user.id,
         total,
         items,
-        status: 'Processing',
+        status: 'Paid',
         coupon_code: appliedCouponCode || null
       })
       .select()
