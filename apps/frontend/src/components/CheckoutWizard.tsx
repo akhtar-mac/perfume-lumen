@@ -169,7 +169,8 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
       }
 
       // 2. Ask our backend to create a Razorpay Order ID
-      const orderResponse = await fetch('http://localhost:3000/api/create-order', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const orderResponse = await fetch(`${apiUrl}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: finalTotal, currency: 'INR' })
@@ -199,7 +200,8 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
         },
         handler: async function (response: any) {
           // 4. On success, verify payment signature on backend
-          const verifyResponse = await fetch('http://localhost:3000/api/verify-payment', {
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+          const verifyResponse = await fetch(`${apiUrl}/api/verify-payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
