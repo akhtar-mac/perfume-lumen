@@ -14,7 +14,7 @@ interface CheckoutWizardProps {
 const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   const { items, getCartTotal, clearCart } = useCartStore();
   const { createOrder, orders, fetchOrders } = useOrderStore();
-  const { user, profile, addAddress } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const [step, setStep] = useState<number>(useAuthStore.getState().user ? 3 : 1);
   
   // Form State
