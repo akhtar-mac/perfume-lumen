@@ -7,7 +7,7 @@ import { useOrderStore } from '../store/useOrderStore';
 import { useProductStore } from '../store/useProductStore';
 import { useSiteStore } from '../store/useSiteStore';
 import AuthModal from '../components/AuthModal';
-import { supabase } from '../lib/supabase';
+
 import './Profile.css';
 
 const Profile: React.FC = () => {
