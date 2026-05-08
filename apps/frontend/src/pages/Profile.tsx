@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ProductCard from '../components/ProductCard';
-import { User, Package, MapPin, Heart, LogOut, Settings, Save, Lock } from 'lucide-react';
+import { User, Package, MapPin, Heart, LogOut, Settings, Save } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Address } from '../store/useAuthStore';
 import { useOrderStore } from '../store/useOrderStore';
@@ -40,11 +40,9 @@ const Profile: React.FC = () => {
   const { addAddress, deleteAddress, setDefaultAddress } = useAuthStore();
   
   // Account Form State
-  const [accountForm, setAccountForm] = useState({ full_name: '', phone: '' });
+  // Password State Removed
   
-  // Password State
-  const [passwords, setPasswords] = useState({ current: '', newPass: '' });
-  const [passMessage, setPassMessage] = useState('');
+  const [accountForm, setAccountForm] = useState({ full_name: '', phone: '' });
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -102,33 +100,6 @@ const Profile: React.FC = () => {
     alert("Account details updated!");
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPassMessage('Verifying current password...');
-    if (!user?.email) return;
-
-    // Verify current password by trying to log in
-    const { error: verifyError } = await supabase.auth.signInWithPassword({ 
-      email: user.email, 
-      password: passwords.current 
-    });
-
-    if (verifyError) {
-      setPassMessage('❌ Incorrect current password. No changes made.');
-      return;
-    }
-
-    setPassMessage('Updating password...');
-    const { error: updateError } = await supabase.auth.updateUser({ password: passwords.newPass });
-    
-    if (updateError) {
-      setPassMessage(`❌ Error: ${updateError.message}`);
-    } else {
-      setPassMessage('✅ Password updated successfully!');
-      setPasswords({ current: '', newPass: '' });
-    }
-  };
-
   const handleRateProduct = async (orderId: string, productId: number, rating: number) => {
     const key = `${orderId}-${productId}`;
     if (ratedItems[key]) return; // Already rated
@@ -173,8 +144,8 @@ const Profile: React.FC = () => {
             <div className="profile-avatar">
               <User size={40} color="#fff" />
             </div>
-            <h2 style={{ fontSize: '1.2rem', wordBreak: 'break-all' }}>{profile?.full_name || user.email?.split('@')[0]}</h2>
-            <p style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>{user.email}</p>
+            <h2 style={{ fontSize: '1.2rem', wordBreak: 'break-all' }}>{profile?.full_name || user.phone || (user.email?.split('@')[0])}</h2>
+            <p style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>{user.phone || user.email}</p>
           </div>
           
           <ul className="profile-menu">
@@ -414,16 +385,6 @@ const Profile: React.FC = () => {
                     <input type="tel" placeholder="Phone Number" value={accountForm.phone} onChange={e => setAccountForm({...accountForm, phone: e.target.value})} />
                   </div>
                   <button type="submit" className="btn-primary" style={{ marginTop: '15px' }}>UPDATE DETAILS</button>
-                </form>
-              </div>
-
-              <div className="profile-form comic-box">
-                <h3><Lock size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '10px' }}/> Change Password</h3>
-                <form onSubmit={handleChangePassword} style={{ marginTop: '15px' }}>
-                  <input type="password" placeholder="Current Password" required minLength={6} value={passwords.current} onChange={e => setPasswords({...passwords, current: e.target.value})} />
-                  <input type="password" placeholder="New Password" required minLength={6} value={passwords.newPass} onChange={e => setPasswords({...passwords, newPass: e.target.value})} style={{ marginTop: '15px' }} />
-                  <button type="submit" className="btn-primary" style={{ marginTop: '15px' }}>CHANGE PASSWORD</button>
-                  {passMessage && <p style={{ marginTop: '15px', fontWeight: 'bold' }}>{passMessage}</p>}
                 </form>
               </div>
             </>
