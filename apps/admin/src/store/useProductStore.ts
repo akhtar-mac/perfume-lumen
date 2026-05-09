@@ -9,6 +9,7 @@ interface ProductStore {
   fetchProducts: () => Promise<void>;
   updateProduct: (id: number, updatedProduct: Partial<Product>) => Promise<void>;
   addProduct: (newProduct: Omit<Product, 'id'>) => Promise<void>;
+  deleteProduct: (id: number) => Promise<void>;
   resetProducts: () => Promise<void>;
   submitCustomerRating: (id: number, rating: number) => Promise<void>;
 }
@@ -82,6 +83,13 @@ export const useProductStore = create<ProductStore>()(
         rating: productWithId.rating || 5,
         reviews_count: productWithId.reviewsCount || 0
       });
+    },
+
+    deleteProduct: async (id) => {
+      set((state) => ({
+        products: state.products.filter(product => product.id !== id)
+      }));
+      await supabase.from('products').delete().eq('id', id);
     },
 
     resetProducts: async () => {

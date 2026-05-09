@@ -10,6 +10,9 @@ export interface CartItem {
 
 interface CartStore {
   items: CartItem[];
+  isDrawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
   addToCart: (item: Omit<CartItem, 'quantity'>) => void;
   removeFromCart: (id: number) => void;
   updateQuantity: (id: number, quantity: number) => void;
@@ -20,16 +23,20 @@ interface CartStore {
 
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
+  isDrawerOpen: false,
+  openDrawer: () => set({ isDrawerOpen: true }),
+  closeDrawer: () => set({ isDrawerOpen: false }),
   addToCart: (newItem) => set((state) => {
     const existingItem = state.items.find(item => item.id === newItem.id);
     if (existingItem) {
       return {
         items: state.items.map(item =>
           item.id === newItem.id ? { ...item, quantity: item.quantity + 1 } : item
-        )
+        ),
+        isDrawerOpen: true
       };
     }
-    return { items: [...state.items, { ...newItem, quantity: 1 }] };
+    return { items: [...state.items, { ...newItem, quantity: 1 }], isDrawerOpen: true };
   }),
   removeFromCart: (id) => set((state) => ({
     items: state.items.filter(item => item.id !== id)

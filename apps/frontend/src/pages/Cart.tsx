@@ -57,6 +57,10 @@ const Cart: React.FC = () => {
                 <span>Shipping</span>
                 <span>Calculated at checkout</span>
               </div>
+              <div className="summary-row" style={{ color: '#0369a1' }}>
+                <span>Coupons</span>
+                <span>Apply at checkout 🏷️</span>
+              </div>
               <div className="summary-row total">
                 <span>TOTAL</span>
                 <span>₹{getCartTotal()}</span>

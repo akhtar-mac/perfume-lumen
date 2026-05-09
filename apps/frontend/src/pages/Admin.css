@@ -10,7 +10,7 @@
 
 .admin-sidebar {
   width: 280px;
-  background-color: #fff;
+  background-color: var(--bg-light);
   border-right: 1px solid var(--border-light);
   padding: 30px 0;
 }
@@ -77,7 +77,7 @@
 }
 
 .btn-secondary {
-  background-color: #fff;
+  background-color: var(--bg-light);
   color: var(--text-dark);
   border: 1px solid #ccc;
   padding: 10px 20px;
@@ -95,7 +95,7 @@
 }
 
 .admin-table-wrapper {
-  background: #fff;
+  background: var(--bg-light);
   border: 1px solid var(--border-light);
   border-radius: 8px;
   overflow: hidden;
@@ -152,7 +152,7 @@
 }
 
 .admin-card {
-  background: #fff;
+  background: var(--bg-light);
   padding: 40px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.03);
@@ -205,7 +205,7 @@
 }
 
 .analytics-card {
-  background: #fff;
+  background: var(--bg-light);
   padding: 25px;
   border-radius: 8px;
   border: var(--border-bold);

@@ -1,4 +1,4 @@
-/* Auth Modal tm-style Theme */
+/* Clean Edit Wizard Styles */
 .auth-overlay {
   position: fixed;
   top: 0;
@@ -15,11 +15,11 @@
 }
 
 .auth-modal {
-  background-color: var(--bg-light);
+  background-color: #ffffff;
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
   border-radius: 16px;
-  padding: 30px 24px 40px;
+  padding: 30px 24px 30px;
   position: relative;
   box-shadow: 0 10px 40px rgba(0,0,0,0.15);
   animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -63,14 +63,6 @@
   font-size: 0.95rem;
 }
 
-.edit-link {
-  color: var(--accent-blue);
-  font-weight: 600;
-  cursor: pointer;
-  margin-left: 8px;
-  font-size: 0.9rem;
-}
-
 /* Floating Input */
 .floating-input-group {
   position: relative;
@@ -86,22 +78,9 @@
   font-family: inherit;
   font-size: 1rem;
   color: var(--text-dark);
-  background: var(--bg-light);
+  background: #fff;
   transition: border-color 0.2s;
-}
-
-.floating-input.with-prefix {
-  padding-left: 50px;
-}
-
-.country-code {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-dark);
-  font-weight: 600;
-  font-size: 1rem;
+  box-sizing: border-box;
 }
 
 .floating-label {
@@ -112,10 +91,6 @@
   font-size: 1rem;
   transition: all 0.2s ease;
   pointer-events: none;
-}
-
-.floating-input.with-prefix ~ .floating-label {
-  left: 50px;
 }
 
 .floating-input:focus,
@@ -162,73 +137,11 @@
   transform: none;
 }
 
-.terms-text {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #9ca3af;
-  margin-top: 16px;
-}
-
-/* OTP */
-.otp-container {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin: 20px 0;
-}
-
-.otp-box {
-  width: 52px;
-  height: 56px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 1.5rem;
-  font-weight: bold;
-  text-align: center;
-  color: var(--text-dark);
-  transition: all 0.2s;
-}
-
-.otp-box:focus {
-  outline: none;
-  border-color: var(--text-dark);
-  box-shadow: 0 0 0 3px rgba(43, 45, 66, 0.1);
-}
-
-.otp-box.success {
-  border-color: #10b981;
-  background-color: #ecfdf5;
-  color: #047857;
-}
-
-.otp-box.error {
-  border-color: #ef4444;
-  background-color: #fef2f2;
-  color: #b91c1c;
-}
-
-.timer-text {
-  text-align: center;
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin-bottom: 20px;
-}
-
-.resend-btn {
-  color: var(--accent-blue);
-  font-weight: 600;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-
 .error-text {
   color: #ef4444;
   text-align: center;
   font-size: 0.85rem;
   font-weight: 600;
-  margin-top: -10px;
   margin-bottom: 15px;
 }
 
@@ -247,21 +160,38 @@
   to { transform: scale(1); opacity: 1; }
 }
 
-.otp-shake {
-  animation: otpShake 0.4s ease;
+.permissions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
 }
 
-@keyframes otpShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  75% { transform: translateX(6px); }
+.permission-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.spin {
-  animation: spin 1s linear infinite;
+.permission-toggle:hover {
+  background-color: #f9fafb;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.permission-toggle.active {
+  border-color: var(--text-dark);
+  background-color: #f9fafb;
+}
+
+.permission-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--text-dark);
+  cursor: pointer;
 }

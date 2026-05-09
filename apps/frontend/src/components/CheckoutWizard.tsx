@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, Smartphone, MapPin, CreditCard, Loader, Plus, ChevronRight, User } from 'lucide-react';
+import { X, CheckCircle, Smartphone, MapPin, CreditCard, Loader, Plus, ChevronRight, User, Tag, ChevronDown } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 import { useOrderStore } from '../store/useOrderStore';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Address } from '../store/useAuthStore';
 import { loadRazorpayScript } from '../lib/razorpay';
 import './CheckoutWizard.css';
+import { useCouponStore } from '../store/useCouponStore';
 
 interface CheckoutWizardProps {
   onClose: () => void;
@@ -48,9 +49,15 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   const [isShaking, setIsShaking] = useState(false);
   const [timer, setTimer] = useState(30);
   
-  // Discount State
+  // Coupon State
+  const [couponCode, setCouponCode] = useState('');
+  const [couponInput, setCouponInput] = useState('');
+  const [couponStatus, setCouponStatus] = useState<'idle' | 'applied' | 'error'>('idle');
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponOpen, setCouponOpen] = useState(false);
+
+  // Discount State — must be declared before useEffects that reference it
   const [discountPercent, setDiscountPercent] = useState<number>(0);
-  const [couponCode] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -101,8 +108,39 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   }, [address.pincode]);
 
 
+  // VALID_COUPONS removed - now using useCouponStore
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    const discount = await useCouponStore.getState().validateCoupon(code);
+    
+    if (discount !== null) {
+      setCouponDiscount(discount);
+      setCouponCode(code);
+      setCouponStatus('applied');
+    } else {
+      setCouponStatus('error');
+      setCouponDiscount(0);
+      setCouponCode('');
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode('');
+    setCouponInput('');
+    setCouponStatus('idle');
+    setCouponDiscount(0);
+  };
+
   const originalTotal = getCartTotal();
-  const finalTotal = Math.round(originalTotal - (originalTotal * (discountPercent / 100)));
+  const activeDiscountPercent = couponDiscount > 0 ? 0 : discountPercent;
+  const firstOrderDiscount = Math.round(originalTotal * (activeDiscountPercent / 100));
+  const couponDiscountAmount = Math.round(originalTotal * (couponDiscount / 100));
+  
+  const subtotalAfterDiscounts = originalTotal - firstOrderDiscount - couponDiscountAmount;
+  const shippingFee = paymentMethod === 'cod' ? (subtotalAfterDiscounts >= 1500 ? 0 : 50) : 0;
+  
+  const finalTotal = Math.round(subtotalAfterDiscounts + shippingFee);
 
   const handleNextStep = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +190,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
         if (user) {
           await createOrder(finalTotal, items.map(item => ({
             id: item.id, title: item.title, price: item.price, quantity: item.quantity, image: item.image
-          })), couponCode.trim() ? couponCode : undefined);
+          })), paymentMethod, shippingFee, couponCode.trim() ? couponCode : undefined);
         }
         setIsProcessing(false);
         setStep(5);
@@ -218,7 +256,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
             if (user) {
               await createOrder(finalTotal, items.map(item => ({
                 id: item.id, title: item.title, price: item.price, quantity: item.quantity, image: item.image
-              })), couponCode.trim() ? couponCode : undefined);
+              })), paymentMethod, shippingFee, couponCode.trim() ? couponCode : undefined);
             }
             setIsProcessing(false);
             setStep(5);
@@ -448,7 +486,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
             <form onSubmit={handlePayment} className="wizard-form slide-in">
               <div className="tm-header">
                 <h2>Payment</h2>
-                <p>100% Safe & Secure Payments</p>
+                <p>100% Safe &amp; Secure Payments</p>
               </div>
 
               {selectedAddress && (
@@ -457,11 +495,68 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
                   <p className="tiny-addr">{selectedAddress.city}, {selectedAddress.pincode} <span className="edit-link" onClick={() => setStep(3)}>Change</span></p>
                 </div>
               )}
-              
+
+              {/* ── Premium Order Summary ── */}
               <div className="tm-receipt">
-                <div className="receipt-row"><span>Item Total</span><span>₹{originalTotal}</span></div>
-                {discountPercent > 0 && <div className="receipt-row discount"><span>Discount ({discountPercent}%)</span><span>-₹{Math.round(originalTotal * (discountPercent / 100))}</span></div>}
-                <div className="receipt-row total"><span>To Pay</span><span>₹{finalTotal}</span></div>
+                <div className="receipt-header">
+                  <span className="receipt-title">Order Summary</span>
+                  <span className="receipt-items-count">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="receipt-rows">
+                  <div className="receipt-row"><span>Item Total</span><span>₹{originalTotal}</span></div>
+                  {activeDiscountPercent > 0 && (
+                    <div className="receipt-row discount">
+                      <span>🎉 First Order ({activeDiscountPercent}% off)</span>
+                      <span>−₹{firstOrderDiscount}</span>
+                    </div>
+                  )}
+                  {couponDiscount > 0 && (
+                    <div className="receipt-row discount">
+                      <span>🏷️ {couponCode} ({couponDiscount}% off)</span>
+                      <span>−₹{couponDiscountAmount}</span>
+                    </div>
+                  )}
+                  <div className="receipt-row shipping">
+                    <span>Delivery</span>
+                    {shippingFee > 0 ? (
+                      <span style={{ color: '#10b981', fontWeight: 700 }}>+₹{shippingFee} 🛵</span>
+                    ) : (
+                      <span className="free-tag">FREE 🚚</span>
+                    )}
+                  </div>
+                </div>
+                <div className="receipt-total-row">
+                  <span>Total Payable</span>
+                  <span>₹{finalTotal}</span>
+                </div>
+              </div>
+
+              {/* ── Coupon Code ── */}
+              <div className="coupon-section">
+                <button type="button" className={`coupon-toggle ${couponOpen ? 'open' : ''}`} onClick={() => setCouponOpen(o => !o)}>
+                  <span className="coupon-toggle-left"><Tag size={15} />{couponStatus === 'applied' ? <span><strong>{couponCode}</strong> applied ✓</span> : <span>Have a coupon code?</span>}</span>
+                  <ChevronDown size={15} className={`coupon-chevron ${couponOpen ? 'rotated' : ''}`} />
+                </button>
+                {couponOpen && (
+                  <div className="coupon-body">
+                    {couponStatus === 'applied' ? (
+                      <div className="coupon-applied-row">
+                        <div className="coupon-applied-badge"><CheckCircle size={15} /><span>₹{couponDiscountAmount} saved!</span></div>
+                        <button type="button" className="coupon-remove-btn" onClick={handleRemoveCoupon}>Remove</button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="coupon-input-row">
+                          <input type="text" className="coupon-input" placeholder="Enter coupon code" value={couponInput}
+                            onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponStatus('idle'); }}
+                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleApplyCoupon())} />
+                          <button type="button" className="coupon-apply-btn" onClick={handleApplyCoupon}>APPLY</button>
+                        </div>
+                        {couponStatus === 'error' && <p className="coupon-error">Invalid token</p>}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="payment-accordion">
@@ -491,6 +586,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
               </button>
             </form>
           )}
+
 
           {step === 5 && (
             <div className="wizard-success slide-in">

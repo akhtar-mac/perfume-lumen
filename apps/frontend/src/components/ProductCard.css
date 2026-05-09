@@ -60,7 +60,7 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: white;
+  background: var(--bg-light);
   border: 2px solid var(--text-dark);
   border-radius: 50%;
   width: 36px;
@@ -127,4 +127,33 @@
   color: #999;
   text-decoration: line-through;
   font-size: 0.9rem;
+}
+
+.quick-add-icon {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .quick-add-text {
+    display: none;
+  }
+  
+  .quick-add-icon {
+    display: block;
+  }
+  
+  .quick-add-btn {
+    bottom: 10px;
+    right: 10px;
+    left: auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 2px 0px var(--text-dark);
+    border: 2px solid var(--text-dark);
+  }
 }

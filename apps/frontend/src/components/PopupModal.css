@@ -41,6 +41,18 @@
   transform: rotate(90deg);
 }
 
+.popup-badge {
+  background-color: var(--accent-pink, #f472b6);
+  color: white;
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  margin-bottom: 15px;
+  border: 2px solid var(--text-dark);
+}
+
 .popup-inner h2 {
   font-size: 3rem;
   color: var(--text-dark);

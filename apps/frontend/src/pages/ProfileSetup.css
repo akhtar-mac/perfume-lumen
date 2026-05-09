@@ -171,7 +171,7 @@
 
 .setup-submit-btn {
   margin-top: 20px;
-  background: #fff;
+  background: var(--bg-light);
   color: #000;
   border: none;
   padding: 18px;

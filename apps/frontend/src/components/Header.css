@@ -18,7 +18,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 80px;
+  height: 100px;
+  position: relative;
+  overflow: visible;
 }
 
 .header.scrolled {
@@ -30,7 +32,7 @@
 }
 
 .header.not-home {
-  position: fixed;
+  position: absolute;
   top: 40px;
   background-color: var(--bg-light);
   border-bottom: 2px solid var(--text-dark);
@@ -41,12 +43,7 @@
   top: 0;
 }
 
-.header-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 80px;
-}
+
 
 .logo h1 {
   font-size: 2.2rem;
@@ -92,6 +89,20 @@
   gap: 15px;
   position: relative;
   z-index: 999;
+}
+
+/* Wrapper that holds icons OR search input on right side */
+.header-actions-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-width: 140px;
+  justify-content: flex-end;
+}
+
+/* Hide icons when search is open */
+.header-actions.actions-hidden {
+  display: none;
 }
 
 .logo {
@@ -179,74 +190,151 @@
 
 
 
-/* Search Dropdown */
-.search-container {
+/* ─────────────────────────────────────────────
+   SEARCH — expand-from-icon (no layout shift)
+   ───────────────────────────────────────────── */
+
+/* Wrapper: icon + growing input, right-aligned */
+.search-expand-wrap {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse; /* icon on the right, input grows left */
+  gap: 8px; /* gap between X icon and input field */
   position: relative;
 }
 
-.search-dropdown {
-  position: absolute;
-  top: 40px;
-  right: -10px;
-  width: 300px;
-  background: var(--bg-light);
-  border: var(--border-bold);
-  box-shadow: var(--comic-shadow);
-  border-radius: 12px;
-  padding: 15px;
-  z-index: 1000;
-}
-
-.search-dropdown input {
-  width: 100%;
-  padding: 10px;
-  border: 2px solid var(--text-dark);
-  border-radius: 8px;
-  font-size: 1.1rem;
+/* The input starts hidden (width 0) and expands */
+.search-expand-input {
+  width: 0;
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  border: none;
   outline: none;
+  background: transparent;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: inherit;
+  padding: 0;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease,
+              padding 0.35s ease;
+  border-bottom: 2px solid transparent;
 }
 
-.search-dropdown input:focus {
-  border-color: var(--accent-blue);
+/* When open: smoothly expand */
+.search-expand-wrap.search-is-open .search-expand-input {
+  width: 200px;
+  max-width: 200px;
+  opacity: 1;
+  pointer-events: all;
+  padding: 4px 4px 4px 0;
+  border-bottom-color: currentColor;
 }
 
-.search-dropdown-results {
-  margin-top: 10px;
-  max-height: 300px;
+.search-expand-input::placeholder {
+  color: rgba(255,255,255,0.6);
+  font-weight: 400;
+}
+
+/* On solid header pages: use dark placeholder */
+.header.not-home .search-expand-input::placeholder,
+.header.scrolled .search-expand-input::placeholder {
+  color: #aaa;
+}
+
+/* The icon button stays in place at all times */
+.search-expand-btn {
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+/* ─── Results dropdown ─── */
+.header-search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 260px; /* matches the 200px input + icon + gap */
+  background: var(--bg-light);
+  border: 2px solid var(--text-dark);
+  border-radius: 12px;
+  box-shadow: 4px 4px 0px var(--text-dark);
+  max-height: 320px;
   overflow-y: auto;
+  z-index: 5000;
+  animation: slideDownResults 0.2s ease;
 }
 
-.search-dropdown-item {
+@keyframes slideDownResults {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.header-search-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 10px;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
   cursor: pointer;
-  border-bottom: 1px dashed #ccc;
+  transition: background 0.15s;
 }
 
-.search-dropdown-item:last-child {
-  border-bottom: none;
-}
+.header-search-item:last-child { border-bottom: none; }
 
-.search-dropdown-item:hover {
-  background-color: #fff0f3;
-  border-radius: 8px;
-}
+.header-search-item:hover { background: #fff8fa; }
 
-.search-dropdown-item img {
-  width: 40px;
-  height: 40px;
+.header-search-item-img {
+  width: 42px;
+  height: 42px;
   object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid var(--text-dark);
+  border-radius: 6px;
+  border: 2px solid var(--text-dark);
+  flex-shrink: 0;
 }
 
-.no-results-small {
-  padding: 10px;
-  text-align: center;
-  color: #666;
+.header-search-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
+
+.header-search-item-info strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  line-height: 1.3;
+}
+
+.header-search-item-info span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-pink);
+}
+
+.header-search-empty {
+  padding: 20px 0;
+  text-align: center;
+  color: #888;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* ─── Mobile: keep mobile behaviour (full-width expansion already happens
+   naturally since header-actions fills available space on mobile) ─── */
+@media (max-width: 900px) {
+  .search-expand-wrap.search-is-open .search-expand-input {
+    width: calc(100vw - 160px);
+    max-width: calc(100vw - 160px);
+  }
+
+  .search-expand-input::placeholder {
+    color: #aaa;
+  }
+}
+
 
 .mobile-toggle {
   display: none;
@@ -272,7 +360,7 @@
   }
 
   .header-container {
-    height: 70px;
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -295,21 +383,23 @@
 
   .main-nav {
     position: fixed;
-    top: -100%;
-    left: 0;
-    width: 100%;
+    top: 0;
+    left: -100%;
+    width: 85%;
+    max-width: 350px;
     height: 100vh;
     background-color: var(--bg-light);
-    transition: all 0.5s cubic-bezier(0.77, 0, 0.175, 1);
-    z-index: 1000;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10000;
     display: flex;
     flex-direction: column;
-    padding: 100px 30px 40px;
-    overflow: hidden;
+    padding: 60px 30px 40px;
+    overflow-y: auto;
+    border-right: 3px solid var(--text-dark);
   }
 
   .main-nav.open {
-    top: 0;
+    left: 0;
   }
 
   .mobile-menu-content {
@@ -328,7 +418,7 @@
   }
 
   .main-nav .nav-links a {
-    font-size: 2.2rem;
+    font-size: 1.75rem;
     font-weight: 900;
     color: var(--text-dark);
     text-shadow: 2px 2px 0px var(--primary-yellow);
@@ -336,6 +426,7 @@
     transition: transform 0.3s ease;
     display: block;
     text-decoration: none;
+    letter-spacing: 0.05em;
   }
 
   .main-nav .nav-links a:hover {
@@ -361,7 +452,7 @@
   .social-icon {
     width: 45px;
     height: 45px;
-    background: white;
+    background: var(--bg-light);
     border: 2px solid var(--text-dark);
     display: flex;
     align-items: center;
@@ -398,20 +489,60 @@
 
   .header-actions {
     gap: 8px;
+    position: static; /* Allow absolute positioning relative to header-container */
   }
 
-  .search-dropdown {
-    position: fixed;
-    width: 90%;
-    left: 50%;
-    transform: translateX(-50%);
-    top: 120px; /* Below the header and bar */
-    right: auto;
+  .search-expand-wrap {
+    position: static;
   }
+
+  /* ─── FIX MOBILE SEARCH OVERLAP WITH GLASSY EFFECT ─── */
+  .search-expand-wrap.search-is-open .search-expand-input {
+    position: absolute;
+    left: 17%; /* 17% left margin for hamburger */
+    width: 52%; /* 52% width for search input */
+    max-width: 52%; /* Leaves 31% space on the right for the 3 icons */
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text-dark);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .search-expand-wrap.search-is-open .search-expand-input::placeholder {
+    color: #eee;
+  }
+
+  /* ─── SOLID HEADER PAGES (WHITE BACKGROUND) ─── */
+  .header.not-home .search-expand-wrap.search-is-open .search-expand-input,
+  .header.scrolled .search-expand-wrap.search-is-open .search-expand-input {
+    background: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 2px solid var(--text-dark);
+    box-shadow: 2px 2px 0px var(--text-dark);
+  }
+
+  .header.not-home .search-expand-wrap.search-is-open .search-expand-input::placeholder,
+  .header.scrolled .search-expand-wrap.search-is-open .search-expand-input::placeholder {
+    color: #666;
+  }
+
+
 
 
   .mobile-overlay {
-    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 9999;
+    backdrop-filter: blur(3px);
   }
 }
 

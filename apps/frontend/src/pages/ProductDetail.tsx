@@ -125,6 +125,21 @@ const ProductDetail: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Mobile Sticky Buy Bar */}
+      <div className="mobile-sticky-buy-bar">
+        {cartItem ? (
+          <div className="btn-primary detail-add-btn" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', cursor: 'default', margin: 0 }}>
+            <button onClick={() => updateQuantity(product.id, cartItem.quantity - 1)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><Minus size={20} /></button>
+            <span>{cartItem.quantity} IN CART</span>
+            <button onClick={() => updateQuantity(product.id, cartItem.quantity + 1)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><Plus size={20} /></button>
+          </div>
+        ) : (
+          <button className="btn-primary detail-add-btn" style={{ margin: 0 }} onClick={() => addToCart({ id: product.id, title: product.title, price: product.price, image: product.images[0] })}>
+            ADD TO CART - ₹{product.price}
+          </button>
+        )}
+      </div>
     </div>
   );
 };

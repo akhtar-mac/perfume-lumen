@@ -66,12 +66,12 @@
 
 .logo {
   font-size: 42px;
-  font-weight: 900;
+  font-weight: 600;
   font-family: 'Fredoka', sans-serif;
   color: var(--primary-yellow);
   text-decoration: none;
-  -webkit-text-stroke: 2px var(--text-dark);
-  text-shadow: 4px 4px 0px var(--text-dark);
+  -webkit-text-stroke: 1px var(--comic-line);
+  text-shadow: 2px 2px 0px var(--comic-line);
   letter-spacing: 2px;
   display: flex;
   align-items: center;

@@ -58,8 +58,14 @@
 }
 
 @media (max-width: 900px) {
+  .footer {
+    padding-top: 40px;
+  }
   .footer-container {
     grid-template-columns: 1fr 1fr;
+  }
+  .footer-logo {
+    font-size: 36px;
   }
 }
 

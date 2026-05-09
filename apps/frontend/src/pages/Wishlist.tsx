@@ -45,24 +45,31 @@ const Wishlist: React.FC = () => {
       <div className="container wishlist-container">
         {!profile ? (
           <div className="empty-wishlist">
-            <p>Please login to view and manage your wishlist.</p>
-            <Link to="/profile" className="btn-primary">GO TO LOGIN</Link>
+            <div className="empty-wishlist-icon">💖</div>
+            <h2>Save Your Favourites</h2>
+            <p>Login to view and manage your personal fragrance wishlist.</p>
+            <Link to="/profile" className="btn-primary">LOGIN / SIGN UP</Link>
           </div>
         ) : wishlistedProducts.length === 0 ? (
           <div className="empty-wishlist">
-            <p>Your wishlist is currently empty.</p>
+            <div className="empty-wishlist-icon">🌸</div>
+            <h2>Nothing saved yet</h2>
+            <p>Tap the ♡ on any perfume to add it to your wishlist.</p>
             <Link to="/shop" className="btn-primary">DISCOVER PERFUMES</Link>
           </div>
         ) : (
           <>
             <div className="wishlist-actions-bar">
-              <p className="results-count">You have {wishlistedProducts.length} items saved.</p>
+              <div className="wishlist-count-label">
+                {wishlistedProducts.length} items saved
+                <span>Add all to cart or checkout now</span>
+              </div>
               <div className="wishlist-btn-group">
                 <button className="btn-secondary" onClick={handleAddAllToCart}>
-                  ADD ALL TO CART
+                  ADD ALL
                 </button>
                 <button className="btn-primary checkout-btn" onClick={handleCheckout}>
-                  CHECKOUT WISHLIST
+                  CHECKOUT
                 </button>
               </div>
             </div>

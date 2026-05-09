@@ -11,6 +11,7 @@ interface EditProductModalProps {
 
 const EditProductModal: React.FC<EditProductModalProps> = ({ product, onClose }) => {
   const updateProduct = useProductStore(state => state.updateProduct);
+  const deleteProduct = useProductStore(state => state.deleteProduct);
   const [formData, setFormData] = useState({
     title: product.title,
     price: product.price,
@@ -34,6 +35,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ product, onClose })
     e.preventDefault();
     updateProduct(product.id, formData);
     onClose();
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm("Are you sure you want to delete this product? This will permanently remove it from the database.")) {
+      await deleteProduct(product.id);
+      onClose();
+    }
   };
 
   return (
@@ -92,7 +100,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ product, onClose })
             <label>Description</label>
             <textarea name="description" value={formData.description} onChange={handleChange} rows={3} required />
           </div>
-          <button type="submit" className="btn-primary" style={{ width: '100%' }}>SAVE CHANGES</button>
+          <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
+            <button type="button" onClick={handleDelete} className="btn-secondary" style={{ color: '#ef4444', borderColor: '#ef4444' }}>DELETE</button>
+            <button type="submit" className="btn-primary" style={{ flex: 1 }}>SAVE CHANGES</button>
+          </div>
         </form>
       </div>
     </div>

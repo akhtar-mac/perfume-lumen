@@ -7,7 +7,7 @@
 
 .profile-sidebar {
   width: 280px;
-  background-color: #fff;
+  background-color: var(--bg-light);
   border: 1px solid var(--border-light);
   border-radius: 8px;
   overflow: hidden;
@@ -85,11 +85,11 @@
   margin-bottom: 25px;
   overflow: hidden;
   box-shadow: 4px 4px 0px var(--text-dark);
-  background: white;
+  background: var(--bg-light);
 }
 
 .profile-form {
-  background: white;
+  background: var(--bg-light);
   padding: 30px;
 }
 
@@ -181,7 +181,7 @@
 
 .address-card {
   padding: 20px;
-  background: white;
+  background: var(--bg-light);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -258,7 +258,7 @@
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s;
-  background: white;
+  background: var(--bg-light);
 }
 
 .type-chip.active {
