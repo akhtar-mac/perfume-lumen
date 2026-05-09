@@ -5,6 +5,7 @@ import Header from './Header';
 import Footer from './Footer';
 import WhatsAppWidget from './WhatsAppWidget';
 import PopupModal from './PopupModal';
+import CartDrawer from './CartDrawer';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,12 +19,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="app-layout">
       <AnnouncementBar />
       <Header isHomePage={isHomePage} />
-      <main style={{ paddingTop: isHomePage ? 0 : '120px' }}>
+      <main style={{ paddingTop: isHomePage ? 0 : '180px' }}>
         {children}
       </main>
       <Footer />
       <WhatsAppWidget />
       <PopupModal />
+      <CartDrawer />
     </div>
   );
 };

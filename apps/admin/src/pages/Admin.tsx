@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, RotateCcw, Image as ImageIcon, LayoutDashboard, Package, Palette, Type, TrendingUp, Users, DollarSign, Tag, Trash2, Power } from 'lucide-react';
+import { Pencil, RotateCcw, Image as ImageIcon, LayoutDashboard, Package, Palette, Type, TrendingUp, Users, DollarSign, Tag, Trash2, Power, Shield } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import EditProductModal from '../components/EditProductModal';
 import AddProductModal from '../components/AddProductModal';
+import EditAdminModal from '../components/EditAdminModal';
 import { useProductStore } from '../store/useProductStore';
 import { useSiteStore } from '../store/useSiteStore';
 import { useCouponStore } from '../store/useCouponStore';
@@ -18,10 +19,24 @@ const Admin: React.FC = () => {
   
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'coupons' | 'theme' | 'hero' | 'content'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'coupons' | 'customers' | 'admins' | 'theme' | 'hero' | 'content'>('overview');
   const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '6m' | 'all'>('all');
   const [orderSearch, setOrderSearch] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [newAdminPhone, setNewAdminPhone] = useState('');
+  const [newAdminPass, setNewAdminPass] = useState('');
+  const [adminPassChange, setAdminPassChange] = useState('');
+  const [adminMessage, setAdminMessage] = useState('');
+  const [adminError, setAdminError] = useState('');
+  const [newAdminRole, setNewAdminRole] = useState('admin');
+  const [editingAdmin, setEditingAdmin] = useState<any | null>(null);
+  
+  const myRole = localStorage.getItem('adminRole') || 'admin';
+  const myPermissionsRaw = localStorage.getItem('adminPermissions');
+  const myPermissions = myPermissionsRaw ? JSON.parse(myPermissionsRaw) : ['overview', 'products', 'coupons', 'customers', 'theme', 'hero', 'content'];
+  
+  const hasAccess = (tab: string) => myRole === 'superadmin' || myPermissions.includes(tab);
   
   // Hero settings form state
   const [heroSettings, setHeroSettings] = useState({
@@ -54,6 +69,7 @@ const Admin: React.FC = () => {
     bestSeller: { name: 'N/A', count: 0 },
     registeredUsers: 0,
     recentOrders: [] as any[],
+    customers: [] as any[],
     isLoading: true
   });
 
@@ -118,6 +134,7 @@ const Admin: React.FC = () => {
           bestSeller,
           registeredUsers: profileCount || 0,
           recentOrders: enrichedOrders,
+          customers: profiles || [],
           isLoading: false
         });
       } else {
@@ -128,7 +145,27 @@ const Admin: React.FC = () => {
     if (activeTab === 'overview') {
       fetchAdminStats();
     }
+    
+    // Also fetch admin users if tab is admins (or just fetch it once)
+    const fetchAdmins = async () => {
+      try {
+        const { data, error } = await supabase.from('admin_users').select('*').order('created_at', { ascending: true });
+        if (!error && data) {
+          setAdminUsers(data);
+        }
+      } catch (err) {
+        console.error("Admin users table might not exist yet.");
+      }
+    };
+    fetchAdmins();
   }, [activeTab, timeFilter]);
+
+  useEffect(() => {
+    if (!hasAccess(activeTab) && activeTab !== 'admins') {
+      const allowedTab = ['overview', 'products', 'coupons', 'customers', 'theme', 'hero', 'content'].find(t => hasAccess(t));
+      if (allowedTab) setActiveTab(allowedTab as any);
+    }
+  }, [myPermissions, activeTab]);
 
   useEffect(() => {
     if (activeTab === 'coupons') {
@@ -153,13 +190,15 @@ const Admin: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Order ID', 'Customer', 'Email', 'City', 'Total (INR)', 'Coupon Code', 'Status', 'Date', 'Items'];
+    const headers = ['Order ID', 'Customer', 'Email', 'City', 'Total (INR)', 'Shipping (INR)', 'Payment', 'Coupon Code', 'Status', 'Date', 'Items'];
     const rows = adminStats.recentOrders.map(o => [
       o.id.split('-')[0].toUpperCase(),
       o.customerName,
       o.customerEmail,
       o.customerCity,
       o.total,
+      o.shipping_fee || 0,
+      o.payment_method?.toUpperCase() || 'PREPAID',
       o.coupon_code || 'None',
       o.status,
       new Date(o.created_at).toLocaleDateString('en-IN'),
@@ -173,6 +212,66 @@ const Admin: React.FC = () => {
     a.download = `lumen-orders-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleAddAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminMessage('');
+    setAdminError('');
+    try {
+      const { data, error } = await supabase.from('admin_users').insert({
+        phone: newAdminPhone,
+        password: newAdminPass,
+        role: newAdminRole
+      }).select().single();
+      
+      if (error) throw error;
+      if (data) {
+        setAdminUsers([...adminUsers, data]);
+        setNewAdminPhone('');
+        setNewAdminPass('');
+        setNewAdminRole('admin');
+        setAdminMessage('Admin added successfully.');
+      }
+    } catch (err: any) {
+      setAdminError(err.message || 'Failed to add admin.');
+    }
+  };
+
+  const handleDeleteAdmin = async (id: string, phone: string) => {
+    if (phone === localStorage.getItem('adminPhone')) {
+      alert("You cannot delete your own account.");
+      return;
+    }
+    if (window.confirm("Are you sure you want to revoke access for this admin?")) {
+      try {
+        const { error } = await supabase.from('admin_users').delete().eq('id', id);
+        if (error) throw error;
+        setAdminUsers(adminUsers.filter(a => a.id !== id));
+      } catch (err: any) {
+        alert(err.message);
+      }
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminMessage('');
+    setAdminError('');
+    const myPhone = localStorage.getItem('adminPhone');
+    if (!myPhone) return;
+    
+    try {
+      const { error } = await supabase.from('admin_users').update({
+        password: adminPassChange
+      }).eq('phone', myPhone);
+      
+      if (error) throw error;
+      setAdminMessage('Your password was updated successfully.');
+      setAdminPassChange('');
+    } catch (err: any) {
+      setAdminError(err.message || 'Failed to update password.');
+    }
   };
 
   const handleSaveHero = (e: React.FormEvent) => {
@@ -216,24 +315,46 @@ const Admin: React.FC = () => {
             <h2>Dashboard</h2>
           </div>
           <ul className="admin-menu">
-            <li className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>
-              <LayoutDashboard size={20} /> Overview
-            </li>
-            <li className={activeTab === 'products' ? 'active' : ''} onClick={() => setActiveTab('products')}>
-              <Package size={20} /> Products
-            </li>
-            <li className={activeTab === 'coupons' ? 'active' : ''} onClick={() => setActiveTab('coupons')}>
-              <Tag size={20} /> Coupons
-            </li>
-            <li className={activeTab === 'theme' ? 'active' : ''} onClick={() => setActiveTab('theme')}>
-              <Palette size={20} /> Theme Colors
-            </li>
-            <li className={activeTab === 'hero' ? 'active' : ''} onClick={() => setActiveTab('hero')}>
-              <ImageIcon size={20} /> Hero Section
-            </li>
-            <li className={activeTab === 'content' ? 'active' : ''} onClick={() => setActiveTab('content')}>
-              <Type size={20} /> Site Content
-            </li>
+            {hasAccess('overview') && (
+              <li className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>
+                <LayoutDashboard size={20} /> Overview
+              </li>
+            )}
+            {hasAccess('products') && (
+              <li className={activeTab === 'products' ? 'active' : ''} onClick={() => setActiveTab('products')}>
+                <Package size={20} /> Products
+              </li>
+            )}
+            {hasAccess('coupons') && (
+              <li className={activeTab === 'coupons' ? 'active' : ''} onClick={() => setActiveTab('coupons')}>
+                <Tag size={20} /> Coupons
+              </li>
+            )}
+            {hasAccess('customers') && (
+              <li className={activeTab === 'customers' ? 'active' : ''} onClick={() => setActiveTab('customers')}>
+                <Users size={20} /> Customers
+              </li>
+            )}
+            {myRole === 'superadmin' && (
+              <li className={activeTab === 'admins' ? 'active' : ''} onClick={() => setActiveTab('admins')}>
+                <Shield size={20} /> Admins
+              </li>
+            )}
+            {hasAccess('theme') && (
+              <li className={activeTab === 'theme' ? 'active' : ''} onClick={() => setActiveTab('theme')}>
+                <Palette size={20} /> Theme Colors
+              </li>
+            )}
+            {hasAccess('hero') && (
+              <li className={activeTab === 'hero' ? 'active' : ''} onClick={() => setActiveTab('hero')}>
+                <ImageIcon size={20} /> Hero Section
+              </li>
+            )}
+            {hasAccess('content') && (
+              <li className={activeTab === 'content' ? 'active' : ''} onClick={() => setActiveTab('content')}>
+                <Type size={20} /> Site Content
+              </li>
+            )}
           </ul>
         </div>
 
@@ -333,6 +454,7 @@ const Admin: React.FC = () => {
                 </div>
                 <input
                   type="text"
+                  className="admin-input"
                   placeholder="🔍 Search by customer name, email, city or order ID..."
                   value={orderSearch}
                   onChange={e => setOrderSearch(e.target.value)}
@@ -395,22 +517,37 @@ const Admin: React.FC = () => {
 
                             {/* Customer & Items Split */}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
-                              <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', border: '2px solid var(--border-light)' }}>
+                              <div className="admin-sub-card" style={{ padding: '15px', borderRadius: '8px', border: '2px solid var(--border-light)' }}>
                                 <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.9rem', color: '#555' }}><Users size={16}/> CUSTOMER</h4>
                                 <p style={{ fontWeight: 'bold', margin: '0 0 5px 0' }}>{order.customerName}</p>
                                 <p style={{ margin: '0 0 5px 0', fontSize: '0.9rem' }}>{order.customerEmail}</p>
                                 <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>📍 {order.customerCity}</p>
-                                {order.coupon_code && (
-                                  <div style={{ marginTop: '10px', padding: '6px 10px', background: '#e0f2fe', border: '1px solid #7dd3fc', borderRadius: '4px', fontSize: '0.85rem', color: '#0369a1', fontWeight: 'bold' }}>
-                                    🏷️ Coupon: {order.coupon_code}
-                                  </div>
-                                )}
+                                <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                  <span style={{ 
+                                    padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold',
+                                    background: order.payment_method === 'cod' ? '#fff7ed' : '#f0fdf4',
+                                    color: order.payment_method === 'cod' ? '#9a3412' : '#166534',
+                                    border: `1px solid ${order.payment_method === 'cod' ? '#fdba74' : '#86efac'}`
+                                  }}>
+                                    {order.payment_method === 'cod' ? '💵 COD' : '💳 PREPAID'}
+                                  </span>
+                                  {order.shipping_fee > 0 && (
+                                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                                      🚚 Fee: ₹{order.shipping_fee}
+                                    </span>
+                                  )}
+                                  {order.coupon_code && (
+                                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', background: '#e0f2fe', color: '#0369a1', border: '1px solid #7dd3fc' }}>
+                                      🏷️ {order.coupon_code}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <div>
                                 <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.9rem', color: '#555' }}><Package size={16}/> ITEMS ({order.items?.length || 0})</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                   {order.items?.map((item: any, i: number) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', background: '#fff', border: '1px solid var(--border-light)', borderRadius: '8px' }}>
+                                    <div key={i} className="admin-sub-card" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', border: '1px solid var(--border-light)', borderRadius: '8px' }}>
                                       <img src={item.image} alt={item.title} style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px' }} />
                                       <div style={{ flex: 1 }}>
                                         <p style={{ margin: 0, fontWeight: 'bold', fontSize: '0.9rem' }}>{item.title}</p>
@@ -446,44 +583,7 @@ const Admin: React.FC = () => {
                 </div>
               </div>
 
-              {/* Bestseller Manager */}
-              <div className="admin-card" style={{ marginBottom: '30px', maxWidth: '100%' }}>
-                <h2 style={{ marginBottom: '5px' }}>⭐ Bestseller Manager</h2>
-                <p className="admin-help-text" style={{ marginBottom: '20px' }}>
-                  Manually select which products are shown as bestsellers. Click the star to toggle.
-                  {siteStore.bestsellerIds.length > 0 && (
-                    <span style={{ marginLeft: '10px', background: 'var(--primary-yellow)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.8rem', border: '1px solid var(--text-dark)' }}>
-                      {siteStore.bestsellerIds.length} selected
-                    </span>
-                  )}
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                  {products.map(product => {
-                    const isBS = siteStore.bestsellerIds.includes(product.id);
-                    return (
-                      <div
-                        key={product.id}
-                        onClick={() => siteStore.toggleBestseller(product.id)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          padding: '10px 16px',
-                          border: `2px solid ${isBS ? 'var(--primary-yellow)' : 'var(--border-light)'}`,
-                          borderRadius: '10px',
-                          background: isBS ? '#fffde7' : 'white',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s',
-                          boxShadow: isBS ? '3px 3px 0px var(--text-dark)' : 'none',
-                          fontWeight: isBS ? 'bold' : 'normal',
-                        }}
-                      >
-                        <img src={product.images[0]} alt={product.title} style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px' }} />
-                        <span style={{ fontSize: '0.9rem' }}>{product.title}</span>
-                        <span style={{ fontSize: '1.2rem' }}>{isBS ? '⭐' : '☆'}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+
               
               <div className="admin-table-wrapper">
                 <table className="admin-table">
@@ -653,6 +753,164 @@ const Admin: React.FC = () => {
             </>
           )}
 
+          {activeTab === 'customers' && (
+            <>
+              <div className="admin-header">
+                <h1>Customer Directory</h1>
+              </div>
+              <div className="admin-table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>City</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminStats.customers.length === 0 ? (
+                      <tr><td colSpan={5} style={{ textAlign: 'center' }}>No customers found.</td></tr>
+                    ) : (
+                      adminStats.customers.map((c: any) => (
+                        <tr key={c.id}>
+                          <td><strong>{c.address?.name || c.full_name || 'N/A'}</strong></td>
+                          <td>{c.address?.email || 'N/A'}</td>
+                          <td>{c.address?.phone || 'N/A'}</td>
+                          <td>{c.address?.city || 'N/A'}</td>
+                          <td>
+                            <button className="btn-secondary" style={{ padding: '5px 10px', fontSize: '0.8rem' }} onClick={() => {
+                              setOrderSearch(c.address?.email || c.full_name);
+                              setActiveTab('overview');
+                            }}>
+                              View Orders
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'admins' && (
+            <>
+              <div className="admin-header">
+                <h1>Admin Permissions</h1>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
+                <div>
+                  {myRole === 'superadmin' && (
+                    <div className="admin-card">
+                      <h2>Add New Admin</h2>
+                      <p className="admin-help-text">Grant dashboard access to a new phone number.</p>
+                      <form onSubmit={handleAddAdmin} className="admin-form">
+                        <div className="form-group">
+                          <label>Phone Number</label>
+                          <input type="tel" value={newAdminPhone} onChange={e => setNewAdminPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} required className="admin-input" placeholder="10-digit number" />
+                        </div>
+                        <div className="form-group">
+                          <label>Password</label>
+                          <input type="text" value={newAdminPass} onChange={e => setNewAdminPass(e.target.value)} required className="admin-input" placeholder="Secure password" />
+                        </div>
+                        <div className="form-group">
+                          <label>Role</label>
+                          <select value={newAdminRole} onChange={e => setNewAdminRole(e.target.value)} className="admin-input" required>
+                            <option value="admin">Admin (Read-only roles)</option>
+                            <option value="superadmin">Superadmin (Full access)</option>
+                          </select>
+                        </div>
+                        <button type="submit" className="btn-primary">ADD ADMIN</button>
+                      </form>
+                    </div>
+                  )}
+
+                  <div className="admin-card" style={{ marginTop: myRole === 'superadmin' ? '30px' : '0' }}>
+                    <h2>Change My Password</h2>
+                    <p className="admin-help-text">Update the password for {localStorage.getItem('adminPhone')}</p>
+                    <form onSubmit={handleChangePassword} className="admin-form">
+                      <div className="form-group">
+                        <label>New Password</label>
+                        <input type="text" value={adminPassChange} onChange={e => setAdminPassChange(e.target.value)} required className="admin-input" placeholder="New secure password" />
+                      </div>
+                      <button type="submit" className="btn-primary">UPDATE PASSWORD</button>
+                    </form>
+                    {adminMessage && <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>{adminMessage}</p>}
+                    {adminError && <p style={{ color: '#ef4444', fontWeight: 'bold', marginTop: '10px' }}>{adminError}</p>}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="admin-card">
+                    <h2>Authorized Admins</h2>
+                    <p className="admin-help-text">List of phone numbers with access to this panel.</p>
+                    <div className="admin-table-wrapper" style={{ boxShadow: 'none', border: 'none', padding: 0 }}>
+                      <table className="admin-table">
+                        <thead>
+                          <tr>
+                            <th>Phone Number</th>
+                            <th>Role</th>
+                            <th>Added On</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {adminUsers.length === 0 ? (
+                            <tr><td colSpan={4}>No admins found or table not created.</td></tr>
+                          ) : (
+                            adminUsers.map(a => (
+                              <tr key={a.id}>
+                                <td><strong>{a.phone}</strong> {a.phone === localStorage.getItem('adminPhone') && <span style={{ color: '#10b981', fontSize: '0.8rem', marginLeft: '5px' }}>(You)</span>}</td>
+                                <td>
+                                  <span style={{ 
+                                    background: a.role === 'superadmin' ? '#ffebee' : '#e3f2fd', 
+                                    color: a.role === 'superadmin' ? '#c62828' : '#1565c0',
+                                    padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' 
+                                  }}>
+                                    {a.role?.toUpperCase() || 'ADMIN'}
+                                  </span>
+                                </td>
+                                <td>{new Date(a.created_at).toLocaleDateString()}</td>
+                                <td>
+                                  {myRole === 'superadmin' && a.phone !== localStorage.getItem('adminPhone') && (
+                                    <button 
+                                      onClick={() => setEditingAdmin(a)} 
+                                      style={{ 
+                                        background: 'none', 
+                                        border: 'none', 
+                                        color: 'var(--accent-blue)', 
+                                        fontWeight: 'bold', 
+                                        cursor: 'pointer',
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '4px',
+                                        padding: '4px 8px',
+                                        borderRadius: '4px',
+                                        transition: 'background 0.2s'
+                                      }}
+                                      onMouseEnter={e => e.currentTarget.style.background = '#f0f4f8'}
+                                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                    >
+                                      <Pencil size={14} strokeWidth={2.5} /> Edit Access
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {activeTab === 'theme' && (
             <>
               <div className="admin-header">
@@ -812,6 +1070,22 @@ const Admin: React.FC = () => {
         <AddProductModal onClose={() => setIsAddingProduct(false)} />
       )}
       
+      {editingAdmin && (
+        <EditAdminModal 
+          admin={editingAdmin} 
+          onClose={() => setEditingAdmin(null)} 
+          onSave={(updatedAdmin) => {
+            setAdminUsers(prev => prev.map(a => a.id === updatedAdmin.id ? updatedAdmin : a));
+            setEditingAdmin(null);
+            setAdminMessage('Admin updated successfully.');
+          }}
+          onDelete={(id, phone) => {
+            setEditingAdmin(null);
+            handleDeleteAdmin(id, phone);
+          }}
+        />
+      )}
+
       <Footer />
     </div>
   );

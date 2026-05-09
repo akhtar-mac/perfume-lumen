@@ -287,3 +287,65 @@
     padding: 20px;
   }
 }
+
+/* Dark Mode Overrides */
+html.dark .admin-page {
+  background-color: var(--bg-dark);
+}
+
+html.dark .admin-sidebar,
+html.dark .admin-card,
+html.dark .admin-table-wrapper,
+html.dark .analytics-card,
+html.dark .btn-secondary,
+html.dark .comic-box,
+html.dark .admin-sub-card {
+  background-color: var(--bg-light) !important;
+  color: var(--text-dark);
+  border-color: var(--text-dark) !important;
+}
+
+html.dark .admin-table th {
+  background-color: #383C57;
+  color: #fff;
+  border-bottom-color: var(--text-dark);
+}
+
+html.dark .admin-table td {
+  border-bottom-color: var(--text-dark);
+}
+
+html.dark .admin-menu li {
+  color: #c9ceeb;
+}
+
+html.dark .admin-menu li:hover {
+  background-color: #383C57;
+  color: #fff;
+}
+
+html.dark .admin-menu li.active {
+  background-color: rgba(239, 71, 111, 0.2);
+  color: var(--accent-pink);
+}
+
+html.dark .admin-input {
+  background-color: #141622;
+  color: var(--text-dark);
+  border-color: #6c739c;
+}
+
+html.dark .admin-help-text,
+html.dark .analytics-info h3 {
+  color: #9ba1c2;
+}
+
+html.dark select {
+  background-color: #141622 !important;
+  color: var(--text-dark) !important;
+  border-color: #6c739c !important;
+}
+
+html.dark .admin-header h1, html.dark .admin-sidebar-header h2 {
+  color: var(--text-dark);
+}

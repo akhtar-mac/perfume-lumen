@@ -15,7 +15,10 @@ export interface Order {
   created_at: string;
   total: number;
   status: string;
+  payment_method: string;
+  shipping_fee: number;
   items: OrderItem[];
+  coupon_code?: string;
 }
 
 interface OrderStore {
@@ -23,7 +26,7 @@ interface OrderStore {
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
   subscribeToOrders: () => (() => void);
-  createOrder: (total: number, items: OrderItem[], appliedCouponCode?: string) => Promise<void>;
+  createOrder: (total: number, items: OrderItem[], paymentMethod: string, shippingFee: number, appliedCouponCode?: string) => Promise<void>;
 }
 
 export const useOrderStore = create<OrderStore>((set) => ({
@@ -77,7 +80,7 @@ export const useOrderStore = create<OrderStore>((set) => ({
     };
   },
 
-  createOrder: async (total, items, appliedCouponCode) => {
+  createOrder: async (total, items, paymentMethod, shippingFee, appliedCouponCode) => {
     const user = useAuthStore.getState().user;
     if (!user) return;
 
@@ -88,8 +91,11 @@ export const useOrderStore = create<OrderStore>((set) => ({
         id: `DEMO-ORD-${Math.floor(Math.random() * 10000)}`,
         created_at: new Date().toISOString(),
         total,
-        status: 'Paid',
-        items
+        status: paymentMethod === 'cod' ? 'Processing' : 'Paid',
+        payment_method: paymentMethod,
+        shipping_fee: shippingFee,
+        items,
+        coupon_code: appliedCouponCode
       };
       
       set((state) => ({ orders: [mockOrder, ...state.orders] }));
@@ -102,7 +108,9 @@ export const useOrderStore = create<OrderStore>((set) => ({
         user_id: user.id,
         total,
         items,
-        status: 'Paid',
+        status: paymentMethod === 'cod' ? 'Processing' : 'Paid',
+        payment_method: paymentMethod,
+        shipping_fee: shippingFee,
         coupon_code: appliedCouponCode || null
       })
       .select()

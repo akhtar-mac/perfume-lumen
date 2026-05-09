@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { Plus, Minus, Heart } from 'lucide-react';
+import { Plus, Minus, Heart, ShoppingBag } from 'lucide-react';
 import './ProductCard.css';
 
 interface ProductCardProps {
@@ -53,7 +53,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, images, title, price, ori
             <button onClick={() => updateQuantity(id, cartItem.quantity + 1)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><Plus size={20} /></button>
           </div>
         ) : (
-          <button className="quick-add-btn" onClick={handleQuickAdd}>ADD TO CART</button>
+          <button className="quick-add-btn" onClick={handleQuickAdd}>
+            <span className="quick-add-text">ADD TO CART</span>
+            <ShoppingBag className="quick-add-icon" size={20} />
+          </button>
         )}
       </Link>
       <div className="product-info">
