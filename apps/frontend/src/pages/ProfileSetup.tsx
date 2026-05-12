@@ -55,7 +55,7 @@ const ProfileSetup: React.FC = () => {
       // 1. Update Profile (Name and Phone)
       await updateProfile({ 
         full_name: formData.fullName,
-        phone: user?.phone || formData.altPhone || ''
+        phone: user?.phoneNumber || formData.altPhone || ''
       });
 
       // 2. Add Address
@@ -63,7 +63,7 @@ const ProfileSetup: React.FC = () => {
         type: 'home',
         name: formData.fullName,
         email: user?.email || '',
-        phone: user?.phone || formData.altPhone || '',
+        phone: user?.phoneNumber || formData.altPhone || '',
         street1: formData.street1,
         street2: '', // Optional
         landmark: '',

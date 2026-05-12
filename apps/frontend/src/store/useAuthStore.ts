@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import type { User, Session } from '@supabase/supabase-js';
+import { auth } from '../lib/firebase';
+import { onAuthStateChanged, signOut as firebaseSignOut, type User } from 'firebase/auth';
 
 export interface Address {
   id: string;
@@ -29,7 +30,7 @@ export interface UserProfile {
 
 interface AuthStore {
   user: User | null;
-  session: Session | null;
+  session: any | null; // Keep for backward compatibility if any components check session
   profile: UserProfile | null;
   isLoading: boolean;
   initialize: () => void;
@@ -40,7 +41,6 @@ interface AuthStore {
   addAddress: (address: Omit<Address, 'id' | 'isDefault'>) => Promise<void>;
   deleteAddress: (addressId: string) => Promise<void>;
   setDefaultAddress: (addressId: string) => Promise<void>;
-  loginWithPhoneHack: (phone: string) => Promise<{ error: Error | null }>;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -50,19 +50,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isLoading: true,
   
   initialize: () => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const user = session?.user || null;
-      set({ session, user, isLoading: !user });
+    onAuthStateChanged(auth, (user) => {
+      set({ user, session: null, isLoading: !user });
       if (user) {
-        get().fetchProfile(user.id);
-      }
-    });
-
-    supabase.auth.onAuthStateChange((_event, session) => {
-      const user = session?.user || null;
-      set({ session, user });
-      if (user) {
-        get().fetchProfile(user.id);
+        get().fetchProfile(user.uid);
       } else {
         set({ profile: null, isLoading: false });
       }
@@ -104,7 +95,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     if (!user || !profile) return;
     
     set({ profile: { ...profile, ...data } });
-    await supabase.from('profiles').update(data).eq('id', user.id);
+    await supabase.from('profiles').update(data).eq('id', user.uid);
   },
 
   addAddress: async (newAddressData) => {
@@ -159,44 +150,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
     
     set({ profile: { ...profile, wishlist: newWishlist } });
-    await supabase.from('profiles').update({ wishlist: newWishlist }).eq('id', user.id);
-  },
-
-  loginWithPhoneHack: async (phone: string) => {
-    // DEMO BYPASS: We are completely skipping Supabase Auth to avoid any Rate Limits.
-    // We will just instantly inject a fake verified user into the local state!
-    const mockUser = {
-      id: 'demo-user-123',
-      email: 'demo@lumen-auth.com',
-      phone: phone
-    };
-
-    const mockProfile = {
-      id: 'demo-user-123',
-      full_name: 'Lumen Demo User',
-      phone: phone,
-      addresses: [{
-        id: 'mock-address-1',
-        type: 'home',
-        name: 'Lumen Demo User',
-        phone: phone,
-        street1: '123 Luxury Avenue',
-        street2: 'Bandra West',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        pincode: '400050',
-        isDefault: true
-      }],
-      wishlist: []
-    };
-
-    // Forcefully set the user and profile in the local app state
-    set({ user: mockUser as any, profile: mockProfile as any, session: {} as any });
-
-    return { error: null };
+    await supabase.from('profiles').update({ wishlist: newWishlist }).eq('id', user.uid);
   },
 
   signOut: async () => {
-    await supabase.auth.signOut();
+    await firebaseSignOut(auth);
   }
 }));
