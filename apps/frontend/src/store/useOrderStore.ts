@@ -41,7 +41,7 @@ export const useOrderStore = create<OrderStore>((set) => ({
     const { data, error } = await supabase
       .from('orders')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', user.uid)
       .order('created_at', { ascending: false });
 
     if (data && !error) {
@@ -66,7 +66,7 @@ export const useOrderStore = create<OrderStore>((set) => ({
       .channel('public:orders')
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${user.id}` },
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `user_id=eq.${user.uid}` },
         (payload) => {
           set((state) => ({
             orders: state.orders.map((o) => (o.id === payload.new.id ? { ...o, ...payload.new } : o))
@@ -84,28 +84,10 @@ export const useOrderStore = create<OrderStore>((set) => ({
     const user = useAuthStore.getState().user;
     if (!user) return;
 
-    // DEMO BYPASS: If this is the fake demo user, just mock the order creation
-    // so we don't hit Row Level Security (RLS) errors from Supabase
-    if (user.id === 'demo-user-123') {
-      const mockOrder: Order = {
-        id: `DEMO-ORD-${Math.floor(Math.random() * 10000)}`,
-        created_at: new Date().toISOString(),
-        total,
-        status: paymentMethod === 'cod' ? 'Processing' : 'Paid',
-        payment_method: paymentMethod,
-        shipping_fee: shippingFee,
-        items,
-        coupon_code: appliedCouponCode
-      };
-      
-      set((state) => ({ orders: [mockOrder, ...state.orders] }));
-      return;
-    }
-
     const { data, error } = await supabase
       .from('orders')
       .insert({
-        user_id: user.id,
+        user_id: user.uid,
         total,
         items,
         status: paymentMethod === 'cod' ? 'Processing' : 'Paid',

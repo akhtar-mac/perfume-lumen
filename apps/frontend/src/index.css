@@ -86,3 +86,4 @@ button {
     font-size: 13px; /* Smaller base font for all mobile elements */
   }
 }
+.grecaptcha-badge { visibility: hidden !important; }

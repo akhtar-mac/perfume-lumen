@@ -4,6 +4,8 @@ import { useCartStore } from '../store/useCartStore';
 import { useOrderStore } from '../store/useOrderStore';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Address } from '../store/useAuthStore';
+import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 import { loadRazorpayScript } from '../lib/razorpay';
 import './CheckoutWizard.css';
 import { useCouponStore } from '../store/useCouponStore';
@@ -21,6 +23,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   // Form State
   const [phone, setPhone] = useState(profile?.phone || '');
   const [otp, setOtp] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   
   // Address State
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -145,25 +148,49 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   const handleNextStep = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
-      setTimer(30);
-      setStep(2);
+      setIsProcessing(true);
+      try {
+        if (!window.recaptchaVerifier) {
+          window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-checkout', { size: 'invisible' });
+        }
+        const appVerifier = window.recaptchaVerifier;
+        const result = await signInWithPhoneNumber(auth, `+91${phone}`, appVerifier);
+        setConfirmationResult(result);
+        
+        setIsProcessing(false);
+        setTimer(30);
+        setStep(2);
+      } catch (error: any) {
+        console.error(error);
+        setIsProcessing(false);
+        alert(error.message || 'Failed to send OTP.');
+      }
       return;
     }
     if (step === 2) {
-      if (otp.length < 4) {
+      if (otp.length < 6) {
         setOtpState('error');
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 600);
         return;
       }
-      setOtpState('success');
       
-      // Actually log the user in using the demo hack!
-      const formattedPhone = `+91${phone}`;
-      const { useAuthStore } = await import('../store/useAuthStore');
-      await useAuthStore.getState().loginWithPhoneHack(formattedPhone);
+      if (!confirmationResult) {
+        alert('Session expired.');
+        return;
+      }
 
-      setTimeout(() => setStep(prev => prev + 1), 700);
+      setIsProcessing(true);
+      try {
+        await confirmationResult.confirm(otp);
+        setOtpState('success');
+        setIsProcessing(false);
+        setTimeout(() => setStep(prev => prev + 1), 700);
+      } catch (error: any) {
+        setIsProcessing(false);
+        setOtpState('error');
+        alert(error.message || 'Invalid OTP');
+      }
       return;
     }
     if (step === 3 && showNewAddressForm) {
@@ -324,9 +351,13 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
                 <label htmlFor="phone" className="floating-label">Mobile Number</label>
               </div>
               
-              <button type="submit" className="btn-primary tm-btn" disabled={phone.length !== 10}>
-                CONTINUE
+              <button type="submit" className="btn-primary tm-btn" disabled={phone.length !== 10 || isProcessing}>
+                {isProcessing ? <Loader className="spin" size={20} /> : 'CONTINUE'}
               </button>
+              <p className="terms-text" style={{ fontSize: '0.7rem', color: '#888', marginTop: '10px', textAlign: 'center' }}>
+                This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" style={{color: '#0369a1', textDecoration: 'none'}}>Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" style={{color: '#0369a1', textDecoration: 'none'}}>Terms of Service</a> apply.
+              </p>
+              <div id="recaptcha-checkout"></div>
             </form>
           )}
 
@@ -338,7 +369,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
               </div>
 
               <div className={`otp-container ${isShaking ? 'otp-shake' : ''}`}>
-                {[0, 1, 2, 3].map(i => (
+                {[0, 1, 2, 3, 4, 5].map(i => (
                   <input
                     key={i} id={`otp-${i}`} type="text" inputMode="numeric" maxLength={1}
                     className={`otp-box ${otpState}`} value={otp[i] || ''} autoFocus={i === 0}
@@ -347,8 +378,8 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
                       const val = e.target.value.replace(/\D/g, '');
                       const arr = otp.split('');
                       arr[i] = val;
-                      setOtp(arr.join('').slice(0, 4));
-                      if (val && i < 3) document.getElementById(`otp-${i + 1}`)?.focus();
+                      setOtp(arr.join('').slice(0, 6));
+                      if (val && i < 5) document.getElementById(`otp-${i + 1}`)?.focus();
                     }}
                     onKeyDown={e => {
                       if (e.key === 'Backspace' && !otp[i] && i > 0) document.getElementById(`otp-${i - 1}`)?.focus();
@@ -365,8 +396,8 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
                 )}
               </div>
 
-              <button type="submit" className="btn-primary tm-btn" disabled={otp.length !== 4 || otpState === 'success'}>
-                {otpState === 'success' ? 'VERIFIED' : 'VERIFY'}
+              <button type="submit" className="btn-primary tm-btn" disabled={otp.length !== 6 || otpState === 'success' || isProcessing}>
+                {isProcessing ? <Loader className="spin" size={20} /> : (otpState === 'success' ? 'VERIFIED' : 'VERIFY')}
               </button>
             </form>
           )}

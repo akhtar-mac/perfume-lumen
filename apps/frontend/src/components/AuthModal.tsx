@@ -2,7 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
+import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 import './AuthModal.css';
+
+declare global {
+  interface Window {
+    recaptchaVerifier: any;
+  }
+}
 
 interface AuthModalProps {
   onClose: () => void;
@@ -11,14 +19,14 @@ interface AuthModalProps {
 const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']); // Firebase uses 6-digit OTPs
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [timer, setTimer] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
   const [otpState, setOtpState] = useState<'idle' | 'success' | 'error'>('idle');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   
-  const { loginWithPhoneHack } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,6 +39,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     return () => clearInterval(interval);
   }, [timer, otpState]);
 
+  useEffect(() => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+      });
+    }
+  }, []);
+
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!phone || phone.length !== 10) {
@@ -41,39 +57,49 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     setIsLoading(true);
     setErrorMsg('');
 
-    // DEMO BYPASS: Pretend we sent an OTP
-    setTimeout(() => {
+    try {
+      const formattedPhone = `+91${phone}`;
+      const appVerifier = window.recaptchaVerifier;
+      const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      setConfirmationResult(result);
+      
       setIsLoading(false);
       setStep('otp');
       setTimer(30);
-    }, 1000);
+    } catch (error: any) {
+      console.error(error);
+      setIsLoading(false);
+      setErrorMsg(error.message || 'Failed to send OTP. Please try again.');
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = otp.join('');
-    if (token.length < 4) {
+    if (token.length < 6) {
       setOtpState('error');
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 600);
       return;
     }
 
+    if (!confirmationResult) {
+      setErrorMsg('Session expired. Please try again.');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg('');
-    setOtpState('success');
 
     try {
-      // DEMO BYPASS: Instantly login using our backend hack
-      const formattedPhone = `+91${phone}`;
-      const { error: hackError } = await loginWithPhoneHack(formattedPhone);
+      await confirmationResult.confirm(token);
+      setOtpState('success');
       
-      if (hackError) throw hackError;
-
       setTimeout(() => {
         setIsLoading(false);
         const currentProfile = useAuthStore.getState().profile;
-        if (!currentProfile || !currentProfile.full_name || currentProfile.addresses.length === 0) {
+        // If profile does not exist or missing basic data, navigate to setup
+        if (!currentProfile || !currentProfile.full_name || currentProfile.addresses?.length === 0) {
           onClose();
           navigate('/profile-setup');
         } else {
@@ -123,7 +149,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             <button type="submit" className="btn-primary tm-btn" disabled={isLoading || phone.length !== 10}>
               {isLoading ? <Loader className="spin" size={20} /> : 'CONTINUE'}
             </button>
-            <p className="terms-text">Demo Mode: Firebase Bypassed</p>
+            <p className="terms-text" style={{ fontSize: '0.7rem', color: '#888', marginTop: '10px' }}>
+              This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" style={{color: '#0369a1', textDecoration: 'none'}}>Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" style={{color: '#0369a1', textDecoration: 'none'}}>Terms of Service</a> apply.
+            </p>
+            <div id="recaptcha-container"></div>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="wizard-form slide-in text-center">
@@ -135,7 +164,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             {errorMsg && <div className="error-text">{errorMsg}</div>}
 
             <div className={`otp-container ${isShaking ? 'otp-shake' : ''}`}>
-              {[0, 1, 2, 3].map(i => (
+              {[0, 1, 2, 3, 4, 5].map(i => (
                 <input
                   key={i} id={`auth-otp-${i}`} type="text" inputMode="numeric" maxLength={1}
                   className={`otp-box ${otpState}`} value={otp[i] || ''} autoFocus={i === 0}
@@ -145,7 +174,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     const arr = [...otp];
                     arr[i] = val;
                     setOtp(arr);
-                    if (val && i < 3) document.getElementById(`auth-otp-${i + 1}`)?.focus();
+                    if (val && i < 5) document.getElementById(`auth-otp-${i + 1}`)?.focus();
                   }}
                   onKeyDown={e => {
                     if (e.key === 'Backspace' && !otp[i] && i > 0) document.getElementById(`auth-otp-${i - 1}`)?.focus();
@@ -162,10 +191,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
               )}
             </div>
 
-            <button type="submit" className="btn-primary tm-btn" disabled={isLoading || otp.join('').length !== 4 || otpState === 'success'}>
+            <button type="submit" className="btn-primary tm-btn" disabled={isLoading || otp.join('').length !== 6 || otpState === 'success'}>
               {isLoading ? <Loader className="spin" size={20} /> : (otpState === 'success' ? 'VERIFIED' : 'VERIFY')}
             </button>
-            <p className="terms-text">Demo Mode: Enter ANY 4 numbers</p>
+            <p className="terms-text">Secure login powered by Firebase</p>
+            <div id="recaptcha-container"></div>
           </form>
         )}
       </div>
@@ -174,4 +204,3 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
 };
 
 export default AuthModal;
-

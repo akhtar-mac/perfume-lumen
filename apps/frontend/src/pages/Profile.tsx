@@ -144,8 +144,8 @@ const Profile: React.FC = () => {
             <div className="profile-avatar">
               <User size={40} color="#fff" />
             </div>
-            <h2 style={{ fontSize: '1.2rem', wordBreak: 'break-all' }}>{profile?.full_name || user.phone || (user.email?.split('@')[0])}</h2>
-            <p style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>{user.phone || user.email}</p>
+            <h2 style={{ fontSize: '1.2rem', wordBreak: 'break-all' }}>{profile?.full_name || user.phoneNumber || (user.email?.split('@')[0])}</h2>
+            <p style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>{user.phoneNumber || user.email}</p>
           </div>
           
           <ul className="profile-menu">
