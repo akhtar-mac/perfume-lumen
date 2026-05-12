@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import type { Product } from '../data/products';
 import { useProductStore } from '../store/useProductStore';
+import MediaUpload from './MediaUpload';
 import './EditProductModal.css';
 
 interface EditProductModalProps {
@@ -29,6 +30,14 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ product, onClose })
       ...prev,
       [name]: ['price', 'originalPrice', 'rating', 'reviewsCount'].includes(name) ? Number(value) : value
     }));
+  };
+
+  const setImage = (index: number, url: string) => {
+    setFormData(prev => {
+      const imgs = [...prev.images];
+      imgs[index] = url;
+      return { ...prev, images: imgs };
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,28 +83,15 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ product, onClose })
               <input type="number" name="reviewsCount" value={formData.reviewsCount} onChange={handleChange} min="0" required />
             </div>
           </div>
-          <div className="form-group">
-            <label>Main Image URL</label>
-            <input type="text" value={formData.images[0]} onChange={(e) => setFormData(prev => ({...prev, images: [e.target.value, prev.images[1], prev.images[2], prev.images[3]]}))} required />
+
+          <MediaUpload label="Main Image" value={formData.images[0]} onChange={url => setImage(0, url)} folder="images" />
+          <MediaUpload label="Notes Image (Hover)" value={formData.images[1] || ''} onChange={url => setImage(1, url)} folder="images" />
+          <div className="form-row">
+            <MediaUpload label="Image 3" value={formData.images[2] || ''} onChange={url => setImage(2, url)} folder="images" />
+            <MediaUpload label="Image 4" value={formData.images[3] || ''} onChange={url => setImage(3, url)} folder="images" />
           </div>
-          <div className="form-group">
-            <label>Notes Image URL (Hover)</label>
-            <input type="text" value={formData.images[1] || ''} onChange={(e) => setFormData(prev => ({...prev, images: [prev.images[0], e.target.value, prev.images[2], prev.images[3]]}))} />
-          </div>
-          <div className="form-row" style={{ display: 'flex', gap: '20px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Image 3 URL</label>
-              <input type="text" value={formData.images[2] || ''} onChange={(e) => setFormData(prev => ({...prev, images: [prev.images[0], prev.images[1], e.target.value, prev.images[3]]}))} />
-            </div>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label>Image 4 URL</label>
-              <input type="text" value={formData.images[3] || ''} onChange={(e) => setFormData(prev => ({...prev, images: [prev.images[0], prev.images[1], prev.images[2], e.target.value]}))} />
-            </div>
-          </div>
-          <div className="form-group">
-            <label>Video URL (Optional)</label>
-            <input type="text" name="videoUrl" value={formData.videoUrl} onChange={handleChange} />
-          </div>
+          <MediaUpload label="Product Video (Optional)" value={formData.videoUrl} onChange={url => setFormData(prev => ({ ...prev, videoUrl: url }))} accept="video" folder="videos" />
+
           <div className="form-group">
             <label>Description</label>
             <textarea name="description" value={formData.description} onChange={handleChange} rows={3} required />
