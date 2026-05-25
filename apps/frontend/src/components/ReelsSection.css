@@ -1,0 +1,213 @@
+.reels-section {
+  padding: 60px 0;
+  background: #000;
+  color: #fff;
+}
+
+.reels-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.reels-header h2 {
+  font-size: 2.5rem;
+  margin-bottom: 5px;
+}
+
+.reels-header .highlight {
+  color: var(--primary-yellow);
+}
+
+.reels-header p {
+  color: #888;
+  font-size: 1rem;
+}
+
+.reels-container {
+  position: relative;
+}
+
+.reels-scroll {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 10px 0 20px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.reels-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.reel-card {
+  flex-shrink: 0;
+  width: 200px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.reel-card:hover {
+  transform: scale(1.05);
+}
+
+.reel-thumbnail {
+  position: relative;
+  width: 200px;
+  height: 350px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #333;
+}
+
+.reel-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reel-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.reel-card:hover .reel-overlay {
+  opacity: 1;
+}
+
+.reel-duration {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.reel-info {
+  padding: 10px 0;
+}
+
+.reel-info h4 {
+  font-size: 0.9rem;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reel-views {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.reels-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s;
+}
+
+.reels-nav-btn:hover {
+  background: var(--primary-yellow);
+  color: #000;
+  border-color: var(--primary-yellow);
+}
+
+.reels-nav-btn.left {
+  left: -20px;
+}
+
+.reels-nav-btn.right {
+  right: -20px;
+}
+
+/* Video Modal */
+.reel-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.reel-modal-content {
+  position: relative;
+  max-width: 400px;
+  width: 100%;
+}
+
+.reel-modal-content video {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.reel-modal-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.reel-modal-info {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.reel-modal-info h3 {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .reels-section {
+    padding: 40px 0;
+  }
+  .reels-header h2 {
+    font-size: 1.8rem;
+  }
+  .reel-card {
+    width: 160px;
+  }
+  .reel-thumbnail {
+    width: 160px;
+    height: 280px;
+  }
+  .reels-nav-btn {
+    display: none;
+  }
+}
