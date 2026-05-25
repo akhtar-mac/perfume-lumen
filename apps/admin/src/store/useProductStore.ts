@@ -59,6 +59,8 @@ export const useProductStore = create<ProductStore>()(
       if (updatedProduct.inStock !== undefined) dbUpdate.in_stock = updatedProduct.inStock;
       if (updatedProduct.rating !== undefined) dbUpdate.rating = updatedProduct.rating;
       if (updatedProduct.reviewsCount !== undefined) dbUpdate.reviews_count = updatedProduct.reviewsCount;
+      if (updatedProduct.category !== undefined) dbUpdate.category = updatedProduct.category;
+      if (updatedProduct.badge !== undefined) dbUpdate.badge = updatedProduct.badge;
       
       await supabase.from('products').update(dbUpdate).eq('id', id);
     },
@@ -81,7 +83,9 @@ export const useProductStore = create<ProductStore>()(
         description: productWithId.description,
         notes: productWithId.notes,
         rating: productWithId.rating || 5,
-        reviews_count: productWithId.reviewsCount || 0
+        reviews_count: productWithId.reviewsCount || 0,
+        in_stock: productWithId.inStock !== false,
+        category: productWithId.category || 'men'
       });
     },
 

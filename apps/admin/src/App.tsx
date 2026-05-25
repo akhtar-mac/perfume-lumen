@@ -84,8 +84,17 @@ function App() {
       }
     }
 
-    // Credentials verified, now send real OTP
+    // Credentials verified, now send real OTP (or bypass for demo)
     try {
+      // Demo number bypass — accept 000000 without Firebase
+      if (phone === '7972272861') {
+        setTempRole(role);
+        setTempPermissions(permissions);
+        setStep('otp');
+        setIsLoading(false);
+        setError('Demo: Enter 000000');
+        return;
+      }
       if (!window.adminRecaptchaVerifier) {
         window.adminRecaptchaVerifier = new RecaptchaVerifier(auth, 'admin-recaptcha', { size: 'invisible' });
       }
@@ -109,8 +118,23 @@ function App() {
       return;
     }
 
+    setIsLoading(true);
+    setError('');
+
+    // Demo number bypass
+    if (phone === '7972272861' && otpString === '000000') {
+      setIsAuthenticated(true);
+      localStorage.setItem('adminAuth', 'true');
+      localStorage.setItem('adminPhone', phone);
+      localStorage.setItem('adminRole', tempRole);
+      localStorage.setItem('adminPermissions', JSON.stringify(tempPermissions));
+      setIsLoading(false);
+      return;
+    }
+
     if (!confirmationResult) {
       setError('Session expired. Please go back and try again.');
+      setIsLoading(false);
       return;
     }
 

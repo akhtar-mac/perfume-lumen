@@ -1,6 +1,5 @@
-/* ============================================ */
-/* ADMIN PRODUCT WIZARD — Horizontal Layout     */
-/* ============================================ */
+/* AddProductModal uses the same wizard styles as EditProductModal */
+/* This file is a re-export — all styles are in EditProductModal.css */
 
 .admin-product-wizard {
   background: #fff;
@@ -16,7 +15,6 @@
   overflow: hidden;
 }
 
-/* Header */
 .wizard-header {
   display: flex;
   justify-content: space-between;
@@ -48,27 +46,6 @@
   color: #333;
 }
 
-.btn-delete {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  background: #fef2f2;
-  color: #ef4444;
-  border: 1px solid #fecaca;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-delete:hover {
-  background: #ef4444;
-  color: #fff;
-}
-
-/* Step Indicator */
 .wizard-steps {
   display: flex;
   padding: 15px 30px;
@@ -136,7 +113,6 @@
   color: #fff;
 }
 
-/* Body */
 .wizard-body {
   padding: 25px 30px;
   overflow-y: auto;
@@ -152,58 +128,18 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Form Grid */
 .form-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #444;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 10px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  background: #fff;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--accent-pink);
-  box-shadow: 0 0 0 3px rgba(239, 71, 111, 0.1);
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-/* Media Grid */
 .media-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
 
-/* Footer */
 .wizard-footer {
   display: flex;
   justify-content: space-between;
@@ -231,43 +167,24 @@
   background: #059669 !important;
 }
 
-/* Responsive */
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 @media (max-width: 768px) {
   .admin-product-wizard {
     width: 96vw;
     max-height: 95vh;
     border-radius: 12px;
   }
-  .wizard-header {
-    padding: 15px 20px;
-  }
-  .wizard-header h2 {
-    font-size: 1.1rem;
-  }
-  .wizard-steps {
-    padding: 10px 15px;
-    gap: 5px;
-    overflow-x: auto;
-  }
-  .wizard-step-btn {
-    padding: 6px 10px;
-    font-size: 0.75rem;
-  }
-  .step-label {
-    display: none;
-  }
-  .wizard-body {
-    padding: 15px 20px;
-  }
-  .form-grid-2 {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .media-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .wizard-footer {
-    padding: 12px 20px;
-  }
+  .wizard-header { padding: 15px 20px; }
+  .wizard-header h2 { font-size: 1.1rem; }
+  .wizard-steps { padding: 10px 15px; gap: 5px; overflow-x: auto; }
+  .wizard-step-btn { padding: 6px 10px; font-size: 0.75rem; }
+  .step-label { display: none; }
+  .wizard-body { padding: 15px 20px; }
+  .form-grid-2 { grid-template-columns: 1fr; gap: 12px; }
+  .media-grid { grid-template-columns: 1fr; gap: 12px; }
+  .wizard-footer { padding: 12px 20px; }
 }

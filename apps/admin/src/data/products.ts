@@ -7,9 +7,11 @@ export interface Product {
   videoUrl?: string;
   description: string;
   notes: string[];
-  inStock?: boolean; // true = In Stock, false = Out of Stock, undefined = assume in stock
+  inStock?: boolean;
   rating?: number;
   reviewsCount?: number;
+  badge?: 'new' | 'trending' | 'bestseller' | 'sold-out';
+  category?: string;
 }
 
 export const PRODUCTS: Product[] = [
