@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import ProductCard from '../components/ProductCard';
-import { User, Package, MapPin, Heart, LogOut, Settings, Save } from 'lucide-react';
+import { User, Package, MapPin, Heart, LogOut, Settings, Save, Edit3, Trash2, Plus, Star, ShoppingBag, Clock, CheckCircle, XCircle, Truck } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import type { Address } from '../store/useAuthStore';
 import { useOrderStore } from '../store/useOrderStore';
 import { useProductStore } from '../store/useProductStore';
 import { useSiteStore } from '../store/useSiteStore';
 import AuthModal from '../components/AuthModal';
-
 import './Profile.css';
 
 const Profile: React.FC = () => {
@@ -23,25 +22,11 @@ const Profile: React.FC = () => {
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [addressForm, setAddressForm] = useState<Omit<Address, 'id' | 'isDefault'>>({
-    type: 'home',
-    name: '',
-    email: '',
-    phone: '',
-    receiverName: '',
-    receiverPhone: '',
-    street1: '',
-    street2: '',
-    landmark: '',
-    city: '',
-    state: '',
-    pincode: ''
+    type: 'home', name: '', email: '', phone: '', receiverName: '', receiverPhone: '',
+    street1: '', street2: '', landmark: '', city: '', state: '', pincode: ''
   });
   
   const { addAddress, deleteAddress, setDefaultAddress } = useAuthStore();
-  
-  // Account Form State
-  // Password State Removed
-  
   const [accountForm, setAccountForm] = useState({ full_name: '', phone: '' });
 
   useEffect(() => {
@@ -50,9 +35,7 @@ const Profile: React.FC = () => {
       fetchOrders();
       unsubscribe = useOrderStore.getState().subscribeToOrders();
     }
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    return () => { if (unsubscribe) unsubscribe(); };
   }, [user, fetchOrders]);
 
   useEffect(() => {
@@ -73,6 +56,10 @@ const Profile: React.FC = () => {
       await addAddress(addressForm);
       setIsAddingAddress(false);
     }
+    resetAddressForm();
+  };
+
+  const resetAddressForm = () => {
     setAddressForm({
       type: 'home', name: '', email: '', phone: '', receiverName: '', receiverPhone: '',
       street1: '', street2: '', landmark: '', city: '', state: '', pincode: ''
@@ -88,10 +75,7 @@ const Profile: React.FC = () => {
   const handleCancelAddress = () => {
     setIsAddingAddress(false);
     setEditingAddressId(null);
-    setAddressForm({
-      type: 'home', name: '', email: '', phone: '', receiverName: '', receiverPhone: '',
-      street1: '', street2: '', landmark: '', city: '', state: '', pincode: ''
-    });
+    resetAddressForm();
   };
 
   const handleSaveAccount = async (e: React.FormEvent) => {
@@ -102,8 +86,7 @@ const Profile: React.FC = () => {
 
   const handleRateProduct = async (orderId: string, productId: number, rating: number) => {
     const key = `${orderId}-${productId}`;
-    if (ratedItems[key]) return; // Already rated
-    
+    if (ratedItems[key]) return;
     setRatedItems(prev => ({ ...prev, [key]: rating }));
     await useProductStore.getState().submitCustomerRating(productId, rating);
   };
@@ -111,169 +94,199 @@ const Profile: React.FC = () => {
   if (!user) {
     return (
       <div className="profile-page">
-        <div className="container" style={{ padding: '100px 20px', textAlign: 'center', minHeight: '60vh' }}>
-          <User size={64} color="var(--accent-blue)" style={{ marginBottom: '20px' }} />
-          <h1>Account Login Required</h1>
-          <p style={{ margin: '20px 0', color: '#666' }}>Please log in or create an account to view your profile and order history.</p>
-          <button className="btn-primary" onClick={() => setShowAuthModal(true)}>
-            LOGIN / SIGN UP
-          </button>
+        <div className="container profile-login-prompt">
+          <div className="login-prompt-box">
+            <User size={64} color="var(--accent-pink)" />
+            <h1>Welcome to LUMEN</h1>
+            <p>Login to view your orders, wishlist, and account details.</p>
+            <button className="btn-primary" onClick={() => setShowAuthModal(true)}>
+              LOGIN / SIGN UP
+            </button>
+          </div>
         </div>
         {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       </div>
     );
   }
 
-  const getStatusStyle = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'processing': return { color: '#f59e0b', emoji: '⏳' };
-      case 'shipped': return { color: '#3b82f6', emoji: '🚚' };
-      case 'delivered': return { color: '#10b981', emoji: '✅' };
-      case 'cancelled': return { color: '#ef4444', emoji: '❌' };
-      default: return { color: '#666', emoji: '📦' };
+      case 'processing': return { color: '#f59e0b', emoji: '⏳', icon: <Clock size={16} />, label: 'Processing' };
+      case 'shipped': return { color: '#3b82f6', emoji: '🚚', icon: <Truck size={16} />, label: 'Shipped' };
+      case 'delivered': return { color: '#10b981', emoji: '✅', icon: <CheckCircle size={16} />, label: 'Delivered' };
+      case 'cancelled': return { color: '#ef4444', emoji: '❌', icon: <XCircle size={16} />, label: 'Cancelled' };
+      default: return { color: '#666', emoji: '📦', icon: <Package size={16} />, label: status };
     }
   };
 
   const wishlistedProducts = products.filter(p => profile?.wishlist?.includes(p.id));
 
+  const tabs = [
+    { id: 'orders', label: 'My Orders', icon: <Package size={18} />, count: orders.length },
+    { id: 'addresses', label: 'Addresses', icon: <MapPin size={18} />, count: profile?.addresses?.length || 0 },
+    { id: 'wishlist', label: 'Wishlist', icon: <Heart size={18} />, count: wishlistedProducts.length },
+    { id: 'account', label: 'Account', icon: <Settings size={18} /> },
+  ];
+
   return (
     <div className="profile-page">
       <div className="container profile-container">
+        {/* Sidebar - Desktop */}
         <div className="profile-sidebar">
           <div className="profile-user-info">
             <div className="profile-avatar">
-              <User size={40} color="#fff" />
+              <User size={36} color="#fff" />
             </div>
-            <h2 style={{ fontSize: '1.2rem', wordBreak: 'break-all' }}>{profile?.full_name || user.phoneNumber || (user.email?.split('@')[0])}</h2>
-            <p style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>{user.phoneNumber || user.email}</p>
+            <h2>{profile?.full_name || user.phoneNumber || user.email?.split('@')[0] || 'User'}</h2>
+            <p>{user.phoneNumber || user.email}</p>
           </div>
           
           <ul className="profile-menu">
-            <li className={activeTab === 'orders' ? 'active' : ''} onClick={() => setActiveTab('orders')}><Package size={20} /> My Orders</li>
-            <li className={activeTab === 'addresses' ? 'active' : ''} onClick={() => setActiveTab('addresses')}><MapPin size={20} /> Saved Addresses</li>
-            <li className={activeTab === 'wishlist' ? 'active' : ''} onClick={() => setActiveTab('wishlist')}><Heart size={20} /> Wishlist</li>
-            <li className={activeTab === 'account' ? 'active' : ''} onClick={() => setActiveTab('account')}><Settings size={20} /> Account Details</li>
-            <li onClick={() => signOut()} style={{ color: '#c62828', cursor: 'pointer', marginTop: '20px' }}><LogOut size={20} /> Sign Out</li>
+            {tabs.map(tab => (
+              <li key={tab.id} className={activeTab === tab.id ? 'active' : ''} onClick={() => setActiveTab(tab.id)}>
+                {tab.icon}
+                <span>{tab.label}</span>
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span className="tab-badge">{tab.count}</span>
+                )}
+              </li>
+            ))}
+            <li className="sign-out-btn" onClick={() => signOut()}>
+              <LogOut size={18} /> Sign Out
+            </li>
           </ul>
         </div>
-        
+
+        {/* Mobile Tab Bar */}
+        <div className="profile-mobile-tabs">
+          {tabs.map(tab => (
+            <button key={tab.id} className={`mobile-tab ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+              {tab.icon}
+              <span>{tab.label}</span>
+              {tab.count !== undefined && tab.count > 0 && (
+                <span className="mobile-tab-badge">{tab.count}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Main Content */}
         <div className="profile-content">
+          {/* Orders Tab */}
           {activeTab === 'orders' && (
-            <>
-              <h1>MY ORDERS</h1>
+            <div className="profile-section">
+              <div className="section-header">
+                <h1>My Orders</h1>
+                <p className="section-subtitle">{orders.length} order{orders.length !== 1 ? 's' : ''} placed</p>
+              </div>
+              
               {isLoading ? (
-                <p>Loading your orders...</p>
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <p>Loading your orders...</p>
+                </div>
               ) : orders.length === 0 ? (
                 <div className="empty-state">
-                  <p>You haven't placed any orders yet.</p>
+                  <ShoppingBag size={56} color="#ddd" />
+                  <h3>No orders yet</h3>
+                  <p>Start shopping to see your orders here!</p>
+                  <a href="/shop" className="btn-primary">SHOP NOW</a>
                 </div>
               ) : (
-                orders.map((order) => {
-                  const statusStyle = getStatusStyle(order.status);
-                  return (
-                  <div key={order.id} className="mock-order">
-                    <div className="order-header">
-                      <div>
-                        <p className="order-label">ORDER PLACED</p>
-                        <p className="order-value">{new Date(order.created_at).toLocaleDateString()}</p>
-                      </div>
-                      <div>
-                        <p className="order-label">TOTAL</p>
-                        <p className="order-value">₹{order.total}</p>
-                      </div>
-                      <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                        <p className="order-label">ORDER #</p>
-                        <p className="order-value">{String(order.id).split('-')[0].toUpperCase()}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="order-body">
-                      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        Status: <span style={{ color: statusStyle.color, fontWeight: 'bold' }}>{statusStyle.emoji} {order.status}</span>
-                      </h3>
-                      <div className="order-items">
-                        {order.items.map((item, i) => (
-                          <div key={i} className="order-item">
-                            <img src={item.image} alt={item.title} />
-                            <div style={{ flex: 1 }}>
-                              <h4>{item.title}</h4>
-                              <p>Qty: {item.quantity} | ₹{item.price}</p>
-                              {order.status === 'Delivered' && (
-                                <div style={{ marginTop: '10px' }}>
-                                  {ratedItems[`${order.id}-${item.id}`] ? (
-                                    <p style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                                      ✅ You rated this {ratedItems[`${order.id}-${item.id}`]} stars!
-                                    </p>
-                                  ) : (
-                                    <div>
-                                      <p style={{ fontSize: '0.85rem', marginBottom: '5px', color: '#666' }}>Rate this product:</p>
-                                      <div style={{ display: 'flex', gap: '4px' }}>
+                <div className="orders-list">
+                  {orders.map((order) => {
+                    const statusConfig = getStatusConfig(order.status);
+                    return (
+                      <div key={order.id} className="order-card">
+                        <div className="order-card-header">
+                          <div className="order-id-date">
+                            <span className="order-id">#{String(order.id).split('-')[0].toUpperCase()}</span>
+                            <span className="order-date">{new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          </div>
+                          <div className="order-total">₹{order.total.toLocaleString('en-IN')}</div>
+                        </div>
+                        
+                        <div className="order-status-bar" style={{ borderColor: statusConfig.color }}>
+                          <span className="status-icon" style={{ color: statusConfig.color }}>{statusConfig.icon}</span>
+                          <span className="status-label" style={{ color: statusConfig.color }}>{statusConfig.label}</span>
+                        </div>
+
+                        <div className="order-items">
+                          {order.items.map((item, i) => (
+                            <div key={i} className="order-item">
+                              <img src={item.image} alt={item.title} />
+                              <div className="order-item-info">
+                                <h4>{item.title}</h4>
+                                <p>Qty: {item.quantity} × ₹{item.price}</p>
+                              </div>
+                              <div className="order-item-total">₹{item.quantity * item.price}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {order.status === 'Delivered' && (
+                          <div className="order-rating-section">
+                            <p>Rate your products:</p>
+                            <div className="rating-items">
+                              {order.items.map((item, i) => {
+                                const key = `${order.id}-${item.id}`;
+                                const rated = ratedItems[key];
+                                return (
+                                  <div key={i} className="rating-item">
+                                    <span className="rating-item-name">{item.title}</span>
+                                    {rated ? (
+                                      <span className="rated-badge">{'★'.repeat(rated)}{'☆'.repeat(5 - rated)} Rated!</span>
+                                    ) : (
+                                      <div className="star-rating">
                                         {[1, 2, 3, 4, 5].map(star => (
-                                          <button
-                                            key={star}
-                                            onClick={() => handleRateProduct(order.id, item.id, star)}
-                                            style={{
-                                              background: 'none', border: 'none', padding: 0,
-                                              fontSize: '1.2rem', color: '#fbbf24', cursor: 'pointer',
-                                              transition: 'transform 0.1s'
-                                            }}
-                                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.2)'}
-                                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                          >
-                                            ☆
+                                          <button key={star} onClick={() => handleRateProduct(order.id, item.id, star)}>
+                                            <Star size={16} />
                                           </button>
                                         ))}
                                       </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
-                    </div>
-                  </div>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
-            </>
+            </div>
           )}
 
+          {/* Addresses Tab */}
           {activeTab === 'addresses' && (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <h1>SAVED ADDRESSES</h1>
+            <div className="profile-section">
+              <div className="section-header">
+                <h1>Saved Addresses</h1>
                 {!isAddingAddress && (
-                  <button className="btn-primary" onClick={() => setIsAddingAddress(true)}>
-                    + ADD NEW ADDRESS
+                  <button className="btn-primary btn-sm" onClick={() => setIsAddingAddress(true)}>
+                    <Plus size={16} /> Add New
                   </button>
                 )}
               </div>
 
               {isAddingAddress ? (
-                <form onSubmit={handleSaveAddress} className="profile-form comic-box slide-in">
+                <form onSubmit={handleSaveAddress} className="address-form">
                   <h3>{editingAddressId ? 'Edit Address' : 'Add New Address'}</h3>
                   
-                  <div className="address-type-selector" style={{ display: 'flex', gap: '15px', margin: '20px 0' }}>
+                  <div className="address-type-selector">
                     {['home', 'office', 'other'].map(type => (
                       <label key={type} className={`type-chip ${addressForm.type === type ? 'active' : ''}`}>
-                        <input 
-                          type="radio" 
-                          name="addressType" 
-                          value={type} 
-                          checked={addressForm.type === type} 
-                          onChange={() => setAddressForm({...addressForm, type: type as any})}
-                          style={{ display: 'none' }}
-                        />
+                        <input type="radio" name="addressType" value={type} checked={addressForm.type === type} onChange={() => setAddressForm({...addressForm, type: type as any})} style={{ display: 'none' }} />
                         {type === 'home' ? '🏠 Home' : type === 'office' ? '🏢 Office' : '🎁 Someone Else'}
                       </label>
                     ))}
                   </div>
 
                   {addressForm.type === 'other' && (
-                    <div className="receiver-details comic-box" style={{ padding: '15px', marginBottom: '20px', background: '#f0f9ff', border: '2px solid var(--text-dark)' }}>
-                      <h4 style={{ marginBottom: '10px' }}>Receiver's Information</h4>
+                    <div className="receiver-details">
+                      <h4>Receiver's Information</h4>
                       <div className="form-row">
                         <input type="text" placeholder="Receiver's Name" required value={addressForm.receiverName} onChange={e => setAddressForm({...addressForm, receiverName: e.target.value})} />
                         <input type="tel" placeholder="Receiver's Phone" required value={addressForm.receiverPhone} onChange={e => setAddressForm({...addressForm, receiverPhone: e.target.value})} />
@@ -295,25 +308,24 @@ const Profile: React.FC = () => {
                     <input type="text" placeholder="PIN Code" pattern="[0-9]{6}" required value={addressForm.pincode} onChange={e => setAddressForm({...addressForm, pincode: e.target.value})} />
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
-                    <button type="submit" className="btn-primary" style={{ flex: 1 }}>
-                      <Save size={20} style={{ marginRight: '10px' }}/> {editingAddressId ? 'UPDATE ADDRESS' : 'SAVE ADDRESS'}
+                  <div className="form-actions">
+                    <button type="submit" className="btn-primary">
+                      <Save size={18} /> {editingAddressId ? 'UPDATE' : 'SAVE'}
                     </button>
-                    <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={handleCancelAddress}>
-                      CANCEL
-                    </button>
+                    <button type="button" className="btn-secondary" onClick={handleCancelAddress}>CANCEL</button>
                   </div>
                 </form>
               ) : (
                 <div className="address-grid">
                   {profile?.addresses?.length === 0 ? (
                     <div className="empty-state">
-                      <MapPin size={48} color="#ccc" style={{ marginBottom: '15px' }}/>
-                      <p>No addresses saved yet. Add one to speed up your checkout!</p>
+                      <MapPin size={56} color="#ddd" />
+                      <h3>No addresses saved</h3>
+                      <p>Add an address to speed up checkout!</p>
                     </div>
                   ) : (
                     profile?.addresses?.map((addr) => (
-                      <div key={addr.id} className={`address-card comic-box ${addr.isDefault ? 'default' : ''}`}>
+                      <div key={addr.id} className={`address-card ${addr.isDefault ? 'default' : ''}`}>
                         <div className="address-card-header">
                           <span className="address-type-tag">
                             {addr.type === 'home' ? '🏠 HOME' : addr.type === 'office' ? '🏢 OFFICE' : '🎁 OTHER'}
@@ -332,10 +344,10 @@ const Profile: React.FC = () => {
                           <p>Contact: {addr.phone || profile.phone}</p>
                         </div>
                         <div className="address-card-actions">
-                          <button onClick={() => handleEditAddress(addr)}>Edit</button>
-                          <button onClick={() => deleteAddress(addr.id)}>Delete</button>
+                          <button onClick={() => handleEditAddress(addr)}><Edit3 size={14} /> Edit</button>
+                          <button className="delete" onClick={() => deleteAddress(addr.id)}><Trash2 size={14} /> Delete</button>
                           {!addr.isDefault && (
-                            <button onClick={() => setDefaultAddress(addr.id)}>Set Default</button>
+                            <button className="set-default" onClick={() => setDefaultAddress(addr.id)}>Set Default</button>
                           )}
                         </div>
                       </div>
@@ -343,19 +355,25 @@ const Profile: React.FC = () => {
                   )}
                 </div>
               )}
-            </>
+            </div>
           )}
 
+          {/* Wishlist Tab */}
           {activeTab === 'wishlist' && (
-            <>
-              <h1>MY WISHLIST ({wishlistedProducts.length})</h1>
+            <div className="profile-section">
+              <div className="section-header">
+                <h1>My Wishlist</h1>
+                <p className="section-subtitle">{wishlistedProducts.length} item{wishlistedProducts.length !== 1 ? 's' : ''} saved</p>
+              </div>
               {wishlistedProducts.length === 0 ? (
                 <div className="empty-state">
-                  <Heart size={48} color="#ccc" style={{ marginBottom: '15px' }}/>
-                  <p>Your wishlist is empty. Tap the heart on products you love!</p>
+                  <Heart size={56} color="#ddd" />
+                  <h3>Your wishlist is empty</h3>
+                  <p>Tap the heart on products you love!</p>
+                  <a href="/shop" className="btn-primary">BROWSE PRODUCTS</a>
                 </div>
               ) : (
-                <div className="product-grid" style={{ marginTop: '20px' }}>
+                <div className="product-grid">
                   {wishlistedProducts.map(product => (
                     <ProductCard
                       key={product.id}
@@ -367,27 +385,50 @@ const Profile: React.FC = () => {
                       isBestseller={bestsellerIds.includes(product.id)}
                       rating={product.rating}
                       reviewsCount={product.reviewsCount}
+                      badge={product.badge}
                     />
                   ))}
                 </div>
               )}
-            </>
+            </div>
           )}
 
+          {/* Account Tab */}
           {activeTab === 'account' && (
-            <>
-              <h1>ACCOUNT DETAILS</h1>
-              <div className="profile-form comic-box" style={{ marginBottom: '30px' }}>
-                <h3>Personal Info</h3>
-                <form onSubmit={handleSaveAccount} style={{ marginTop: '15px' }}>
-                  <div className="form-row">
-                    <input type="text" placeholder="Full Name" value={accountForm.full_name} onChange={e => setAccountForm({...accountForm, full_name: e.target.value})} />
-                    <input type="tel" placeholder="Phone Number" value={accountForm.phone} onChange={e => setAccountForm({...accountForm, phone: e.target.value})} />
+            <div className="profile-section">
+              <div className="section-header">
+                <h1>Account Details</h1>
+              </div>
+              <div className="account-form-wrapper">
+                <div className="account-avatar-section">
+                  <div className="account-avatar-large">
+                    <User size={48} color="#fff" />
                   </div>
-                  <button type="submit" className="btn-primary" style={{ marginTop: '15px' }}>UPDATE DETAILS</button>
+                  <div className="account-info">
+                    <h3>{profile?.full_name || 'Your Name'}</h3>
+                    <p>{user.phoneNumber || user.email}</p>
+                  </div>
+                </div>
+                
+                <form onSubmit={handleSaveAccount} className="account-form">
+                  <div className="form-group">
+                    <label>Full Name</label>
+                    <input type="text" placeholder="Enter your full name" value={accountForm.full_name} onChange={e => setAccountForm({...accountForm, full_name: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" placeholder="Enter your phone number" value={accountForm.phone} onChange={e => setAccountForm({...accountForm, phone: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label>Email</label>
+                    <input type="email" value={user.email || user.phoneNumber || ''} disabled style={{ background: '#f5f5f5' }} />
+                  </div>
+                  <button type="submit" className="btn-primary">
+                    <Save size={18} /> SAVE CHANGES
+                  </button>
                 </form>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
