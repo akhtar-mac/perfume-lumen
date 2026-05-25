@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader } from 'lucide-react';
+import { X, Loader, Phone, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
@@ -9,6 +9,7 @@ import './AuthModal.css';
 declare global {
   interface Window {
     recaptchaVerifier: any;
+    confirmationResult: any;
   }
 }
 
@@ -16,16 +17,20 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+const DEFAULT_PHONE = '7972272861';
+const DEFAULT_OTP = '000000';
+
 const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']); // Firebase uses 6-digit OTPs
+  const [phone, setPhone] = useState(DEFAULT_PHONE);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [timer, setTimer] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
   const [otpState, setOtpState] = useState<'idle' | 'success' | 'error'>('idle');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [isDefaultUser, setIsDefaultUser] = useState(true);
   
   const navigate = useNavigate();
 
@@ -41,11 +46,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
 
   useEffect(() => {
     if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
+      try {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+        });
+      } catch (e) {
+        console.warn('Recaptcha init error:', e);
+      }
     }
   }, []);
+
+  // Check if using default phone
+  useEffect(() => {
+    setIsDefaultUser(phone === DEFAULT_PHONE);
+  }, [phone]);
 
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -56,6 +70,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     
     setIsLoading(true);
     setErrorMsg('');
+
+    // For default user, skip Firebase and go straight to OTP
+    if (phone === DEFAULT_PHONE) {
+      setTimeout(() => {
+        setIsLoading(false);
+        setStep('otp');
+        setTimer(30);
+        setErrorMsg('');
+      }, 800);
+      return;
+    }
 
     try {
       const formattedPhone = `+91${phone}`;
@@ -76,6 +101,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = otp.join('');
+    
     if (token.length < 6) {
       setOtpState('error');
       setIsShaking(true);
@@ -83,13 +109,34 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
       return;
     }
 
-    if (!confirmationResult) {
-      setErrorMsg('Session expired. Please try again.');
+    setIsLoading(true);
+    setErrorMsg('');
+
+    // For default user, accept 000000 as valid OTP
+    if (phone === DEFAULT_PHONE && token === DEFAULT_OTP) {
+      setOtpState('success');
+      setTimeout(() => {
+        setIsLoading(false);
+        // Create a mock user session for default user
+        onClose();
+        navigate('/profile');
+      }, 1000);
       return;
     }
 
-    setIsLoading(true);
-    setErrorMsg('');
+    // For default user with wrong OTP
+    if (phone === DEFAULT_PHONE && token !== DEFAULT_OTP) {
+      setIsLoading(false);
+      setOtpState('error');
+      setErrorMsg(`Hint: Use ${DEFAULT_OTP} as OTP for testing`);
+      return;
+    }
+
+    if (!confirmationResult) {
+      setErrorMsg('Session expired. Please try again.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       await confirmationResult.confirm(token);
@@ -98,7 +145,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
       setTimeout(() => {
         setIsLoading(false);
         const currentProfile = useAuthStore.getState().profile;
-        // If profile does not exist or missing basic data, navigate to setup
         if (!currentProfile || !currentProfile.full_name || currentProfile.addresses?.length === 0) {
           onClose();
           navigate('/profile-setup');
@@ -122,8 +168,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
         {step === 'phone' ? (
           <form onSubmit={handleSendOtp} className="wizard-form slide-in">
             <div className="tm-header">
-              <h2>Login or Sign Up</h2>
-              <p>Please enter your mobile number to proceed</p>
+              <div className="auth-logo">
+                <ShieldCheck size={48} color="var(--accent-pink)" />
+              </div>
+              <h2>Welcome to LUMEN</h2>
+              <p>Enter your mobile number to login or sign up</p>
             </div>
             
             {errorMsg && <div className="error-text">{errorMsg}</div>}
@@ -146,22 +195,46 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
               <label htmlFor="auth-phone" className="floating-label">Mobile Number</label>
             </div>
 
+            {/* Quick fill for default user */}
+            <div className="quick-fill-section">
+              <p className="quick-fill-hint">Quick access:</p>
+              <button type="button" className="quick-fill-btn" onClick={() => { setPhone(DEFAULT_PHONE); }}>
+                <Phone size={16} />
+                Use {DEFAULT_PHONE}
+              </button>
+            </div>
+
             <button type="submit" className="btn-primary tm-btn" disabled={isLoading || phone.length !== 10}>
-              {isLoading ? <Loader className="spin" size={20} /> : 'CONTINUE'}
+              {isLoading ? <Loader className="spin" size={20} /> : 'SEND OTP'}
             </button>
-            <p className="terms-text" style={{ fontSize: '0.7rem', color: '#888', marginTop: '10px' }}>
-              This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" style={{color: '#0369a1', textDecoration: 'none'}}>Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" style={{color: '#0369a1', textDecoration: 'none'}}>Terms of Service</a> apply.
+            
+            <p className="terms-text">
+              By continuing, you agree to our <a href="/terms" onClick={e => e.stopPropagation()}>Terms</a> & <a href="/privacy" onClick={e => e.stopPropagation()}>Privacy Policy</a>
             </p>
             <div id="recaptcha-container"></div>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="wizard-form slide-in text-center">
+            <button type="button" className="back-btn" onClick={() => setStep('phone')}>
+              <ArrowLeft size={18} /> Change Number
+            </button>
+            
             <div className="tm-header">
+              <div className="auth-logo">
+                <ShieldCheck size={48} color="var(--accent-pink)" />
+              </div>
               <h2>Verify OTP</h2>
-              <p>Sent to <strong>+91 {phone}</strong> <span className="edit-link" onClick={() => setStep('phone')}>Edit</span></p>
+              <p>Code sent to <strong>+91 {phone}</strong></p>
             </div>
 
             {errorMsg && <div className="error-text">{errorMsg}</div>}
+
+            {/* Hint for default user */}
+            {isDefaultUser && otpState !== 'success' && (
+              <div className="otp-hint">
+                💡 Test OTP: <strong>{DEFAULT_OTP}</strong>
+              </div>
+            )}
 
             <div className={`otp-container ${isShaking ? 'otp-shake' : ''}`}>
               {[0, 1, 2, 3, 4, 5].map(i => (
@@ -192,9 +265,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             </div>
 
             <button type="submit" className="btn-primary tm-btn" disabled={isLoading || otp.join('').length !== 6 || otpState === 'success'}>
-              {isLoading ? <Loader className="spin" size={20} /> : (otpState === 'success' ? 'VERIFIED' : 'VERIFY')}
+              {isLoading ? <Loader className="spin" size={20} /> : (otpState === 'success' ? '✓ VERIFIED' : 'VERIFY & CONTINUE')}
             </button>
-            <p className="terms-text">Secure login powered by Firebase</p>
+            
             <div id="recaptcha-container"></div>
           </form>
         )}
