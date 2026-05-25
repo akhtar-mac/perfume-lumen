@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, RotateCcw, Image as ImageIcon, LayoutDashboard, Package, Palette, Type, TrendingUp, Users, DollarSign, Tag, Trash2, Power, LogOut, Settings, BarChart3, ShoppingBag, Eye } from 'lucide-react';
+import { Pencil, RotateCcw, Image as ImageIcon, LayoutDashboard, Package, Palette, Type, TrendingUp, Users, DollarSign, Tag, LogOut, BarChart3, ShoppingBag, Eye } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import EditProductModal from '../components/EditProductModal';
