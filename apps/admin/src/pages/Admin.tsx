@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, RotateCcw, Image as ImageIcon, LayoutDashboard, Package, Palette, Type, TrendingUp, Users, DollarSign, Tag, Trash2, Power, Shield } from 'lucide-react';
+import { Pencil, RotateCcw, Image as ImageIcon, LayoutDashboard, Package, Palette, Type, TrendingUp, Users, DollarSign, Tag, Trash2, Power, Shield, ScrollText, Trash, Link2 } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import EditProductModal from '../components/EditProductModal';
@@ -19,7 +19,7 @@ const Admin: React.FC = () => {
   
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'coupons' | 'customers' | 'admins' | 'theme' | 'hero' | 'content'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'coupons' | 'customers' | 'admins' | 'theme' | 'hero' | 'content' | 'activityLogs'>('overview');
   const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '6m' | 'all'>('all');
   const [orderSearch, setOrderSearch] = useState('');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
@@ -34,7 +34,7 @@ const Admin: React.FC = () => {
   
   const myRole = localStorage.getItem('adminRole') || 'admin';
   const myPermissionsRaw = localStorage.getItem('adminPermissions');
-  const myPermissions = myPermissionsRaw ? JSON.parse(myPermissionsRaw) : ['overview', 'products', 'coupons', 'customers', 'theme', 'hero', 'content'];
+  const myPermissions = myPermissionsRaw ? JSON.parse(myPermissionsRaw) : ['overview', 'products', 'coupons', 'customers', 'theme', 'hero', 'content', 'activityLogs'];
   
   const hasAccess = (tab: string) => myRole === 'superadmin' || myPermissions.includes(tab);
   
@@ -50,6 +50,7 @@ const Admin: React.FC = () => {
   // Content settings
   const [contentSettings, setContentSettings] = useState({
     announcement: siteStore.announcementText,
+    announcementEnabled: siteStore.announcementEnabled,
     gridTitle: siteStore.gridTitle
   });
 
@@ -57,7 +58,36 @@ const Admin: React.FC = () => {
   const [themeSettings, setThemeSettings] = useState({
     yellow: siteStore.themePrimaryYellow,
     pink: siteStore.themeAccentPink,
-    blue: siteStore.themeAccentBlue
+    blue: siteStore.themeAccentBlue,
+    bgPrimary: siteStore.themeBgPrimary,
+    bgSecondary: siteStore.themeBgSecondary,
+    textPrimary: siteStore.themeTextPrimary,
+    textSecondary: siteStore.themeTextSecondary,
+    border: siteStore.themeBorder,
+    success: siteStore.themeSuccess,
+    warning: siteStore.themeWarning,
+    error: siteStore.themeError
+  });
+
+  // Theme Appearance
+  const [themeAppearance, setThemeAppearance] = useState({
+    fontFamily: siteStore.themeFontFamily,
+    borderRadius: siteStore.themeBorderRadius,
+    buttonStyle: siteStore.themeButtonStyle,
+    customCSS: siteStore.themeCustomCSS
+  });
+
+  // Branding settings
+  const [brandingSettings, setBrandingSettings] = useState({
+    siteTitle: siteStore.siteTitle,
+    siteDescription: siteStore.siteDescription,
+    logoUrl: siteStore.logoUrl,
+    faviconUrl: siteStore.faviconUrl,
+    footerText: siteStore.footerText,
+    socialFacebook: siteStore.socialFacebook,
+    socialInstagram: siteStore.socialInstagram,
+    socialTwitter: siteStore.socialTwitter,
+    socialYoutube: siteStore.socialYoutube
   });
 
   // Admin Stats State
@@ -162,7 +192,7 @@ const Admin: React.FC = () => {
 
   useEffect(() => {
     if (!hasAccess(activeTab) && activeTab !== 'admins') {
-      const allowedTab = ['overview', 'products', 'coupons', 'customers', 'theme', 'hero', 'content'].find(t => hasAccess(t));
+      const allowedTab = ['overview', 'products', 'coupons', 'customers', 'theme', 'hero', 'content', 'activityLogs'].find(t => hasAccess(t));
       if (allowedTab) setActiveTab(allowedTab as any);
     }
   }, [myPermissions, activeTab]);
@@ -289,8 +319,10 @@ const Admin: React.FC = () => {
     e.preventDefault();
     siteStore.updateContentSettings({
       announcementText: contentSettings.announcement,
+      announcementEnabled: contentSettings.announcementEnabled,
       gridTitle: contentSettings.gridTitle
     });
+    siteStore.addActivityLog('Content Updated', `Announcement: "${contentSettings.announcement.substring(0, 60)}..." | Enabled: ${contentSettings.announcementEnabled}`);
     alert('Content settings saved!');
   };
 
@@ -299,9 +331,47 @@ const Admin: React.FC = () => {
     siteStore.updateThemeSettings({
       themePrimaryYellow: themeSettings.yellow,
       themeAccentPink: themeSettings.pink,
-      themeAccentBlue: themeSettings.blue
+      themeAccentBlue: themeSettings.blue,
+      themeBgPrimary: themeSettings.bgPrimary,
+      themeBgSecondary: themeSettings.bgSecondary,
+      themeTextPrimary: themeSettings.textPrimary,
+      themeTextSecondary: themeSettings.textSecondary,
+      themeBorder: themeSettings.border,
+      themeSuccess: themeSettings.success,
+      themeWarning: themeSettings.warning,
+      themeError: themeSettings.error
     });
+    siteStore.addActivityLog('Theme Colors Updated', `Primary: ${themeSettings.yellow}, Pink: ${themeSettings.pink}, Blue: ${themeSettings.blue}`);
     alert('Theme colors saved!');
+  };
+
+  const handleSaveAppearance = (e: React.FormEvent) => {
+    e.preventDefault();
+    siteStore.updateThemeAppearance({
+      themeFontFamily: themeAppearance.fontFamily,
+      themeBorderRadius: themeAppearance.borderRadius,
+      themeButtonStyle: themeAppearance.buttonStyle,
+      themeCustomCSS: themeAppearance.customCSS
+    });
+    siteStore.addActivityLog('Theme Appearance Updated', `Font: ${themeAppearance.fontFamily}, Radius: ${themeAppearance.borderRadius}px, Buttons: ${themeAppearance.buttonStyle}`);
+    alert('Appearance settings saved!');
+  };
+
+  const handleSaveBranding = (e: React.FormEvent) => {
+    e.preventDefault();
+    siteStore.updateBranding({
+      siteTitle: brandingSettings.siteTitle,
+      siteDescription: brandingSettings.siteDescription,
+      logoUrl: brandingSettings.logoUrl,
+      faviconUrl: brandingSettings.faviconUrl,
+      footerText: brandingSettings.footerText,
+      socialFacebook: brandingSettings.socialFacebook,
+      socialInstagram: brandingSettings.socialInstagram,
+      socialTwitter: brandingSettings.socialTwitter,
+      socialYoutube: brandingSettings.socialYoutube
+    });
+    siteStore.addActivityLog('Branding Updated', `Title: "${brandingSettings.siteTitle}"`);
+    alert('Branding settings saved!');
   };
 
   return (
@@ -338,6 +408,11 @@ const Admin: React.FC = () => {
             {myRole === 'superadmin' && (
               <li className={activeTab === 'admins' ? 'active' : ''} onClick={() => setActiveTab('admins')}>
                 <Shield size={20} /> Admins
+              </li>
+            )}
+            {hasAccess('activityLogs') && (
+              <li className={activeTab === 'activityLogs' ? 'active' : ''} onClick={() => { siteStore.fetchActivityLogs(); setActiveTab('activityLogs'); }}>
+                <ScrollText size={20} /> Activity Logs
               </li>
             )}
             {hasAccess('theme') && (
@@ -911,37 +986,193 @@ const Admin: React.FC = () => {
             </>
           )}
 
+          {activeTab === 'activityLogs' && (
+            <>
+              <div className="admin-header">
+                <h1>Activity Logs</h1>
+                <button className="btn-secondary" onClick={() => { siteStore.clearActivityLogs(); }}>
+                  <Trash size={16} style={{ marginRight: '6px' }} /> Clear All Logs
+                </button>
+              </div>
+              <p className="admin-help-text" style={{ marginTop: '-20px', marginBottom: '20px' }}>
+                Track all admin actions for debugging and auditing. Stored in localStorage (max 500 entries).
+              </p>
+              <div className="admin-table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '170px' }}>Timestamp</th>
+                      <th style={{ width: '140px' }}>Admin Phone</th>
+                      <th style={{ width: '160px' }}>Action Type</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {siteStore.activityLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                          No activity logs yet. Actions will be recorded as you use the dashboard.
+                        </td>
+                      </tr>
+                    ) : (
+                      siteStore.activityLogs.map((log) => (
+                        <tr key={log.id}>
+                          <td style={{ fontSize: '0.85rem', color: '#666', whiteSpace: 'nowrap' }}>
+                            {new Date(log.timestamp).toLocaleDateString('en-IN')} {new Date(log.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </td>
+                          <td><strong>{log.adminPhone}</strong></td>
+                          <td>
+                            <span className={`log-badge log-${log.actionType.toLowerCase().replace(/\s+/g, '-')}`}>
+                              {log.actionType}
+                            </span>
+                          </td>
+                          <td style={{ fontSize: '0.9rem' }}>{log.details}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
           {activeTab === 'theme' && (
             <>
               <div className="admin-header">
-                <h1>Theme & Branding</h1>
+                <h1>Theme & Branding Control</h1>
               </div>
-              <div className="admin-card">
-                <h2>Global Colors</h2>
-                <p className="admin-help-text">Change the comic-style vibrant colors across your entire website.</p>
+
+              {/* ─── Global Colors ─── */}
+              <div className="admin-card" style={{ maxWidth: '800px', marginBottom: '30px' }}>
+                <h2>🎨 Global Colors</h2>
+                <p className="admin-help-text">Change colors across your entire website.</p>
                 <form onSubmit={handleSaveTheme} className="admin-form">
+                  <div className="theme-color-grid">
+                    {([
+                      ['yellow', 'Primary Yellow', 'Accents & highlights'],
+                      ['pink', 'Accent Pink', 'Primary buttons & links'],
+                      ['blue', 'Accent Blue', 'Secondary actions'],
+                      ['bgPrimary', 'Background Primary', 'Page background'],
+                      ['bgSecondary', 'Background Secondary', 'Cards & sections'],
+                      ['textPrimary', 'Text Primary', 'Headings & body text'],
+                      ['textSecondary', 'Text Secondary', 'Muted / helper text'],
+                      ['border', 'Border Color', 'Borders & dividers'],
+                      ['success', 'Success Green', 'Positive states'],
+                      ['warning', 'Warning Orange', 'Warning states'],
+                      ['error', 'Error Red', 'Error & danger states'],
+                    ] as const).map(([key, label, hint]) => (
+                      <div key={key} className="form-group">
+                        <label>{label} <span className="theme-hint">({hint})</span></label>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <input type="color" value={(themeSettings as any)[key]} onChange={e => setThemeSettings({...themeSettings, [key]: e.target.value})} className="theme-color-picker" />
+                          <input type="text" className="admin-input" value={(themeSettings as any)[key]} onChange={e => setThemeSettings({...themeSettings, [key]: e.target.value})} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button type="submit" className="btn-primary">SAVE COLORS</button>
+                </form>
+              </div>
+
+              {/* ─── Typography & Layout ─── */}
+              <div className="admin-card" style={{ maxWidth: '800px', marginBottom: '30px' }}>
+                <h2>✏️ Typography & Layout</h2>
+                <p className="admin-help-text">Control fonts, border radius, and button styles.</p>
+                <form onSubmit={handleSaveAppearance} className="admin-form">
                   <div className="form-group">
-                    <label>Primary Yellow (Accents)</label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <input type="color" value={themeSettings.yellow} onChange={e => setThemeSettings({...themeSettings, yellow: e.target.value})} style={{ width: '50px', height: '50px', cursor: 'pointer' }} />
-                      <input type="text" className="admin-input" value={themeSettings.yellow} onChange={e => setThemeSettings({...themeSettings, yellow: e.target.value})} />
+                    <label>Font Family</label>
+                    <select value={themeAppearance.fontFamily} onChange={e => setThemeAppearance({...themeAppearance, fontFamily: e.target.value})} className="admin-input">
+                      <option value="'Inter', sans-serif">Inter (Default)</option>
+                      <option value="'Poppins', sans-serif">Poppins</option>
+                      <option value="'Playfair Display', serif">Playfair Display</option>
+                      <option value="'Roboto', sans-serif">Roboto</option>
+                      <option value="'Montserrat', sans-serif">Montserrat</option>
+                      <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+                      <option value="'DM Sans', sans-serif">DM Sans</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Border.radius (px): <strong>{themeAppearance.borderRadius}px</strong></label>
+                    <input type="range" min="0" max="24" value={themeAppearance.borderRadius} onChange={e => setThemeAppearance({...themeAppearance, borderRadius: e.target.value})} style={{ width: '100%' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#999' }}>
+                      <span>Sharp (0px)</span><span>Rounded (12px)</span><span>Pill (24px)</span>
                     </div>
                   </div>
                   <div className="form-group">
-                    <label>Accent Pink (Primary Buttons)</label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <input type="color" value={themeSettings.pink} onChange={e => setThemeSettings({...themeSettings, pink: e.target.value})} style={{ width: '50px', height: '50px', cursor: 'pointer' }} />
-                      <input type="text" className="admin-input" value={themeSettings.pink} onChange={e => setThemeSettings({...themeSettings, pink: e.target.value})} />
+                    <label>Button Style</label>
+                    <div className="btn-style-options">
+                      {(['rounded', 'square', 'sharp'] as const).map(style => (
+                        <button key={style} type="button" className={`btn-style-opt ${themeAppearance.buttonStyle === style ? 'active' : ''}`} onClick={() => setThemeAppearance({...themeAppearance, buttonStyle: style})}>
+                          <span className="btn-style-preview btn-style-{style}"></span>
+                          {style.charAt(0).toUpperCase() + style.slice(1)}
+                        </button>
+                      ))}
                     </div>
                   </div>
                   <div className="form-group">
-                    <label>Accent Blue (Secondary)</label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <input type="color" value={themeSettings.blue} onChange={e => setThemeSettings({...themeSettings, blue: e.target.value})} style={{ width: '50px', height: '50px', cursor: 'pointer' }} />
-                      <input type="text" className="admin-input" value={themeSettings.blue} onChange={e => setThemeSettings({...themeSettings, blue: e.target.value})} />
+                    <label>Custom CSS (Advanced)</label>
+                    <textarea className="admin-input" rows={5} placeholder={"/* Example */\n.hero-title { text-shadow: 2px 2px 0 #000; }"} value={themeAppearance.customCSS} onChange={e => setThemeAppearance({...themeAppearance, customCSS: e.target.value})} style={{ fontFamily: 'monospace', fontSize: '0.85rem' }} />
+                    <span className="theme-hint">This CSS is injected globally. Use with caution.</span>
+                  </div>
+                  <button type="submit" className="btn-primary">SAVE APPEARANCE</button>
+                </form>
+              </div>
+
+              {/* ─── Branding ─── */}
+              <div className="admin-card" style={{ maxWidth: '800px', marginBottom: '30px' }}>
+                <h2>🏷️ Site Branding</h2>
+                <p className="admin-help-text">Configure site identity, logo, favicon, and social links.</p>
+                <form onSubmit={handleSaveBranding} className="admin-form">
+                  <div className="form-group">
+                    <label>Site Title</label>
+                    <input type="text" className="admin-input" value={brandingSettings.siteTitle} onChange={e => setBrandingSettings({...brandingSettings, siteTitle: e.target.value})} placeholder="Shown in browser tab & SEO" />
+                  </div>
+                  <div className="form-group">
+                    <label>Meta Description</label>
+                    <input type="text" className="admin-input" value={brandingSettings.siteDescription} onChange={e => setBrandingSettings({...brandingSettings, siteDescription: e.target.value})} placeholder="SEO meta description" />
+                  </div>
+                  <div className="form-row" style={{ display: 'flex', gap: '20px' }}>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Logo URL</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input type="text" className="admin-input" value={brandingSettings.logoUrl} onChange={e => setBrandingSettings({...brandingSettings, logoUrl: e.target.value})} placeholder="https://..." />
+                        {brandingSettings.logoUrl && <img src={brandingSettings.logoUrl} alt="Logo" style={{ width: '40px', height: '40px', objectFit: 'contain', border: '1px solid #eee', borderRadius: '4px' }} />}
+                      </div>
+                    </div>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Favicon URL</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input type="text" className="admin-input" value={brandingSettings.faviconUrl} onChange={e => setBrandingSettings({...brandingSettings, faviconUrl: e.target.value})} placeholder="https://..." />
+                        {brandingSettings.faviconUrl && <img src={brandingSettings.faviconUrl} alt="Favicon" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />}
+                      </div>
                     </div>
                   </div>
-                  <button type="submit" className="btn-primary">SAVE THEME</button>
+                  <div className="form-group">
+                    <label>Footer Text</label>
+                    <input type="text" className="admin-input" value={brandingSettings.footerText} onChange={e => setBrandingSettings({...brandingSettings, footerText: e.target.value})} placeholder="© 2025 Your Brand" />
+                  </div>
+                  <div className="form-group">
+                    <h3 style={{ fontSize: '1rem', margin: '10px 0', color: '#555' }}><Link2 size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} /> Social Media Links</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                      <div>
+                        <label>Facebook</label>
+                        <input type="text" className="admin-input" value={brandingSettings.socialFacebook} onChange={e => setBrandingSettings({...brandingSettings, socialFacebook: e.target.value})} placeholder="https://facebook.com/..." />
+                      </div>
+                      <div>
+                        <label>Instagram</label>
+                        <input type="text" className="admin-input" value={brandingSettings.socialInstagram} onChange={e => setBrandingSettings({...brandingSettings, socialInstagram: e.target.value})} placeholder="https://instagram.com/..." />
+                      </div>
+                      <div>
+                        <label>Twitter / X</label>
+                        <input type="text" className="admin-input" value={brandingSettings.socialTwitter} onChange={e => setBrandingSettings({...brandingSettings, socialTwitter: e.target.value})} placeholder="https://twitter.com/..." />
+                      </div>
+                      <div>
+                        <label>YouTube</label>
+                        <input type="text" className="admin-input" value={brandingSettings.socialYoutube} onChange={e => setBrandingSettings({...brandingSettings, socialYoutube: e.target.value})} placeholder="https://youtube.com/..." />
+                      </div>
+                    </div>
+                  </div>
+                  <button type="submit" className="btn-primary">SAVE BRANDING</button>
                 </form>
               </div>
             </>
@@ -1032,7 +1263,16 @@ const Admin: React.FC = () => {
                 <p className="admin-help-text">Manage scrolling announcements and section titles.</p>
                 <form onSubmit={handleSaveContent} className="admin-form">
                   <div className="form-group">
-                    <label>Announcement Bar Text</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span>Announcement Bar</span>
+                      <label className="toggle-switch">
+                        <input type="checkbox" checked={contentSettings.announcementEnabled} onChange={e => setContentSettings({...contentSettings, announcementEnabled: e.target.checked})} />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <span style={{ fontSize: '0.85rem', color: contentSettings.announcementEnabled ? '#10b981' : '#999', fontWeight: 'bold' }}>
+                        {contentSettings.announcementEnabled ? 'VISIBLE' : 'HIDDEN'}
+                      </span>
+                    </label>
                     <textarea 
                       value={contentSettings.announcement} 
                       onChange={(e) => setContentSettings({...contentSettings, announcement: e.target.value})} 

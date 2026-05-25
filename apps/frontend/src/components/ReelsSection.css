@@ -1,38 +1,132 @@
+/* ============================================================
+   ReelsSection — Premium TikTok / Instagram Reels Experience
+   ============================================================ */
+
+/* ---------- Section Shell ---------- */
 .reels-section {
-  padding: 60px 0;
-  background: #000;
+  position: relative;
+  padding: 80px 0 60px;
+  background: #050505;
   color: #fff;
+  overflow: hidden;
+  font-family: 'Fredoka', sans-serif;
 }
 
+.reels-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(239, 71, 111, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255, 209, 102, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.reels-section .container {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Header ---------- */
 .reels-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+  padding: 0 20px;
 }
 
-.reels-header h2 {
-  font-size: 2.5rem;
-  margin-bottom: 5px;
+.reels-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
-.reels-header .highlight {
+.reels-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(239, 71, 111, 0.12);
+  border: 1px solid rgba(239, 71, 111, 0.25);
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-pink);
+}
+
+.reels-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-pink);
+  animation: reels-pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes reels-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.reels-view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.3s ease, gap 0.3s ease;
+  letter-spacing: 0.5px;
+}
+
+.reels-view-all:hover {
   color: var(--primary-yellow);
+  gap: 8px;
 }
 
-.reels-header p {
-  color: #888;
+.reels-title {
+  font-size: clamp(2.4rem, 5vw, 3.8rem);
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #fff 30%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.reels-title-accent {
+  background: linear-gradient(135deg, var(--primary-yellow) 0%, #ff9f43 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.reels-subtitle {
   font-size: 1rem;
+  color: rgba(255, 255, 255, 0.45);
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 400;
 }
 
-.reels-container {
+/* ---------- Carousel ---------- */
+.reels-carousel {
   position: relative;
+  padding: 0 10px;
 }
 
 .reels-scroll {
   display: flex;
-  gap: 15px;
+  gap: 18px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding: 10px 0 20px;
+  scroll-behavior: smooth;
+  padding: 16px 10px 24px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -41,173 +135,602 @@
   display: none;
 }
 
+/* ---------- Reel Card ---------- */
 .reel-card {
   flex-shrink: 0;
-  width: 200px;
+  width: 240px;
   scroll-snap-align: start;
   cursor: pointer;
-  transition: transform 0.2s;
+  outline: none;
 }
 
-.reel-card:hover {
-  transform: scale(1.05);
+.reel-card-inner {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.35s ease;
 }
 
+.reel-card:hover .reel-card-inner {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.reel-card:focus-visible .reel-card-inner {
+  box-shadow: 0 0 0 3px var(--primary-yellow);
+}
+
+/* Thumbnail */
 .reel-thumbnail {
   position: relative;
-  width: 200px;
-  height: 350px;
-  border-radius: 12px;
+  width: 240px;
+  height: 420px;
   overflow: hidden;
-  border: 2px solid #333;
+  background: #111;
 }
 
 .reel-thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.reel-overlay {
+.reel-card:hover .reel-thumbnail img {
+  transform: scale(1.08);
+}
+
+/* Play Button Overlay */
+.reel-play-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.3);
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(0, 0, 0, 0.15);
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.3s ease;
 }
 
-.reel-card:hover .reel-overlay {
+.reel-card:hover .reel-play-overlay {
   opacity: 1;
 }
 
-.reel-duration {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0,0,0,0.7);
+.reel-play-btn {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  transition: transform 0.3s ease, background 0.3s ease;
+  z-index: 2;
+}
+
+.reel-card:hover .reel-play-btn {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.reel-play-icon {
+  position: relative;
+  z-index: 2;
   color: #fff;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  margin-left: 3px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.reel-play-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  animation: reels-play-pulse 2s ease-out infinite;
+}
+
+@keyframes reels-play-pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Duration Badge */
+.reel-duration-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 6px;
+  font-size: 0.7rem;
   font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.3px;
+  z-index: 3;
 }
 
-.reel-info {
-  padding: 10px 0;
+/* Bottom Gradient Overlay */
+.reel-gradient-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.6) 40%,
+    rgba(0, 0, 0, 0.2) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
 }
 
-.reel-info h4 {
-  font-size: 0.9rem;
-  margin-bottom: 3px;
+/* Card Info (overlaid on thumbnail) */
+.reel-card-info {
+  position: absolute;
+  bottom: 28px;
+  left: 14px;
+  right: 14px;
+  z-index: 2;
+}
+
+.reel-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-.reel-views {
-  font-size: 0.8rem;
-  color: #888;
+.reel-card-subtitle {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 400;
+  letter-spacing: 0.3px;
 }
 
+/* Progress Bar (view count visual) */
+.reel-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: 3;
+}
+
+.reel-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-pink), var(--primary-yellow));
+  border-radius: 0 2px 2px 0;
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Views Badge */
+.reel-views-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  z-index: 3;
+}
+
+/* ---------- Nav Buttons ---------- */
 .reels-nav-btn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.1);
-  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 10;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .reels-nav-btn:hover {
   background: var(--primary-yellow);
   color: #000;
   border-color: var(--primary-yellow);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 8px 24px rgba(255, 209, 102, 0.3);
 }
 
-.reels-nav-btn.left {
-  left: -20px;
+.reels-nav-btn:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
-.reels-nav-btn.right {
-  right: -20px;
+.reels-nav-left {
+  left: -10px;
 }
 
-/* Video Modal */
+.reels-nav-right {
+  right: -10px;
+}
+
+/* ---------- Mobile Swipe Hint ---------- */
+.reels-swipe-hint {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.reels-swipe-line {
+  width: 30px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================================
+   VIDEO MODAL
+   ============================================================ */
 .reel-modal {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.9);
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   padding: 20px;
+  animation: reels-modal-fade-in 0.3s ease;
+}
+
+@keyframes reels-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .reel-modal-content {
   position: relative;
-  max-width: 400px;
   width: 100%;
+  max-width: 450px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #111;
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  transform: scale(0.9) translateY(20px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.3s ease;
 }
 
-.reel-modal-content video {
-  width: 100%;
-  border-radius: 12px;
+.reel-modal-content.reel-modal-enter {
+  transform: scale(1) translateY(0);
+  opacity: 1;
 }
 
+/* Close Button */
 .reel-modal-close {
   position: absolute;
-  top: -40px;
+  top: -48px;
   right: 0;
-  background: none;
-  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 5px;
+  z-index: 10;
+  transition: all 0.25s ease;
 }
 
+.reel-modal-close:hover {
+  background: var(--accent-pink);
+  border-color: var(--accent-pink);
+  transform: rotate(90deg);
+}
+
+/* Video Wrapper */
+.reel-modal-video-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background: #000;
+  overflow: hidden;
+}
+
+.reel-modal-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Video Overlay Controls */
+.reel-modal-video-overlay {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.reel-modal-content:hover .reel-modal-video-overlay {
+  opacity: 1;
+}
+
+.reel-modal-mute,
+.reel-modal-fullscreen {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.reel-modal-mute:hover,
+.reel-modal-fullscreen:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* Loading Spinner */
+.reel-modal-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 3;
+  animation: reels-fade-out 0.6s 0.8s ease forwards;
+  pointer-events: none;
+}
+
+.reel-modal-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--primary-yellow);
+  border-radius: 50%;
+  animation: reels-spin 0.8s linear infinite;
+}
+
+@keyframes reels-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes reels-fade-out {
+  to { opacity: 0; }
+}
+
+/* Modal Info */
 .reel-modal-info {
-  text-align: center;
-  margin-top: 15px;
+  padding: 20px 22px 24px;
+  background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
 }
 
-.reel-modal-info h3 {
-  font-size: 1.1rem;
+.reel-modal-info-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
+.reel-modal-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.reel-modal-details h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.reel-modal-details p {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.reel-modal-stats {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.reel-modal-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+/* ============================================================
+   RESPONSIVE — Mobile
+   ============================================================ */
 @media (max-width: 768px) {
   .reels-section {
-    padding: 40px 0;
+    padding: 50px 0 40px;
   }
-  .reels-header h2 {
-    font-size: 1.8rem;
+
+  .reels-header {
+    margin-bottom: 28px;
   }
-  .reel-card {
-    width: 160px;
+
+  .reels-badge {
+    font-size: 0.6rem;
+    padding: 4px 10px;
   }
-  .reel-thumbnail {
-    width: 160px;
-    height: 280px;
+
+  .reels-title {
+    font-size: 2.2rem;
   }
+
+  .reels-subtitle {
+    font-size: 0.88rem;
+  }
+
+  /* Hide nav buttons on mobile — use swipe */
   .reels-nav-btn {
-    display: none;
+    display: none !important;
+  }
+
+  /* Show swipe hint */
+  .reels-swipe-hint {
+    display: flex;
+  }
+
+  /* Smaller cards on mobile */
+  .reel-card {
+    width: 180px;
+  }
+
+  .reel-thumbnail {
+    width: 180px;
+    height: 320px;
+  }
+
+  .reel-card-title {
+    font-size: 0.85rem;
+  }
+
+  .reel-card-subtitle {
+    font-size: 0.65rem;
+  }
+
+  .reel-play-btn {
+    width: 52px;
+    height: 52px;
+  }
+
+  .reel-play-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Tighter scroll gap */
+  .reels-scroll {
+    gap: 12px;
+    padding: 12px 10px 20px;
+  }
+
+  /* Modal: full-screen on mobile */
+  .reel-modal {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .reel-modal-content {
+    max-width: 100%;
+    border-radius: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .reel-modal-video-wrapper {
+    flex: 1;
+    aspect-ratio: auto;
+  }
+
+  .reel-modal-close {
+    top: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 20;
+  }
+
+  .reel-modal-info {
+    padding: 16px 18px 20px;
+  }
+
+  .reel-modal-video-overlay {
+    opacity: 1;
+    top: auto;
+    bottom: 16px;
+    right: 16px;
+    flex-direction: row;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — Large Screens
+   ============================================================ */
+@media (min-width: 1400px) {
+  .reels-scroll {
+    gap: 22px;
+  }
+
+  .reel-card {
+    width: 260px;
+  }
+
+  .reel-thumbnail {
+    width: 260px;
+    height: 460px;
   }
 }

@@ -10,6 +10,108 @@ import { loadRazorpayScript } from '../lib/razorpay';
 import './CheckoutWizard.css';
 import { useCouponStore } from '../store/useCouponStore';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+/**
+ * Queue an email notification via the backend.
+ * The backend stores it in a JSON queue file until SMTP is configured.
+ */
+export async function queueEmail(to: string, subject: string, body: string, type: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_URL}/api/queue-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, subject, body, type })
+    });
+    const data = await response.json();
+    if (data.success) {
+      console.log(`[Email] Queued ${type} email to ${to}`);
+    }
+    return data.success;
+  } catch (err) {
+    console.error('[Email] Failed to queue email:', err);
+    return false;
+  }
+}
+
+function buildOrderConfirmationEmail(
+  _email: string,
+  orderItems: { title: string; price: number; quantity: number }[],
+  total: number,
+  paymentMethod: string,
+  shippingFee: number,
+  shippingAddress: {
+    name: string;
+    street1: string;
+    street2: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
+  }
+): { subject: string; body: string } {
+  const itemsList = orderItems
+    .map(item => `  • ${item.title} × ${item.quantity} — ₹${item.price * item.quantity}`)
+    .join('\n');
+
+  const paymentLabel = paymentMethod === 'cod' ? 'Cash on Delivery' : paymentMethod === 'upi' ? 'UPI' : 'Credit/Debit Card';
+
+  const body = `
+Hi ${shippingAddress.name},
+
+Thank you for your order at Lumen Perfumes! 🎉
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ORDER SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${itemsList}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Payment Method: ${paymentLabel}
+Shipping Fee: ${shippingFee > 0 ? `₹${shippingFee}` : 'FREE'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOTAL PAID: ₹${total}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DELIVERY ADDRESS:
+${shippingAddress.name}
+${shippingAddress.street1}${shippingAddress.street2 ? ', ' + shippingAddress.street2 : ''}
+${shippingAddress.city}, ${shippingAddress.state} - ${shippingAddress.pincode}
+Phone: ${shippingAddress.phone}
+
+We'll notify you when your order ships. Track your order anytime from your account.
+
+If you have any questions, reply to this email or contact our support team.
+
+With love,
+The Lumen Perfumes Team
+`.trim();
+
+  const subject = `Order Confirmed — ₹${total} | Lumen Perfumes`;
+
+  return { subject, body };
+}
+
+function buildPaymentFailedEmail(
+  _email: string,
+  total: number
+): { subject: string; body: string } {
+  const subject = `Payment Failed — Order Not Placed | Lumen Perfumes`;
+  const body = `
+Hi there,
+
+We encountered an issue while processing your payment of ₹${total} at Lumen Perfumes.
+
+Your order has NOT been placed and no amount has been charged to your account.
+
+To complete your purchase, please return to the checkout and try again. If the issue persists, try a different payment method or contact our support team.
+
+With love,
+The Lumen Perfumes Team
+`.trim();
+  return { subject, body };
+}
+
 interface CheckoutWizardProps {
   onClose: () => void;
 }
@@ -222,6 +324,24 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
         setIsProcessing(false);
         setStep(5);
         clearCart();
+
+        // Queue confirmation email
+        const emailAddr = user?.email || address.email;
+        if (emailAddr) {
+          const addr = (selectedAddress || {
+            name: profile?.full_name || '',
+            street1: address.street1,
+            street2: address.street2,
+            city: address.city,
+            state: address.state,
+            pincode: address.pincode,
+            phone: address.phone || profile?.phone || ''
+          }) as { name: string; street1: string; street2: string; city: string; state: string; pincode: string; phone: string };
+          const { subject, body } = buildOrderConfirmationEmail(
+            emailAddr, items, finalTotal, paymentMethod, shippingFee, addr
+          );
+          queueEmail(emailAddr, subject, body, 'order_confirmation');
+        }
         return;
       }
 
@@ -288,6 +408,24 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
             setIsProcessing(false);
             setStep(5);
             clearCart();
+
+            // Queue confirmation email
+            const emailAddr = user?.email || address.email;
+            if (emailAddr) {
+              const addr = (selectedAddress || {
+                name: profile?.full_name || '',
+                street1: address.street1,
+                street2: address.street2,
+                city: address.city,
+                state: address.state,
+                pincode: address.pincode,
+                phone: address.phone || profile?.phone || ''
+              }) as { name: string; street1: string; street2: string; city: string; state: string; pincode: string; phone: string };
+              const { subject, body } = buildOrderConfirmationEmail(
+                emailAddr, items, finalTotal, paymentMethod, shippingFee, addr
+              );
+              queueEmail(emailAddr, subject, body, 'order_confirmation');
+            }
           } else {
             alert('Payment verification failed! Please contact support.');
             setIsProcessing(false);
@@ -298,8 +436,16 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
       const rzp = new window.Razorpay(options);
       
       rzp.on('payment.failed', function (response: any) {
-        alert(`Payment Failed: ${response.error.description}`);
+        const errorMsg = response.error.description || 'Payment was not completed.';
+        alert(`Payment Failed: ${errorMsg}`);
         setIsProcessing(false);
+
+        // Queue payment-failed email
+        const emailAddr = user?.email || address.email;
+        if (emailAddr) {
+          const { subject, body } = buildPaymentFailedEmail(emailAddr, finalTotal);
+          queueEmail(emailAddr, subject, body, 'payment_failed');
+        }
       });
       
       rzp.open();

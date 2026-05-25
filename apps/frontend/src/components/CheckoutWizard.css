@@ -267,6 +267,31 @@
   transition: all 0.2s;
 }
 
+@media (max-width: 480px) {
+  .otp-container {
+    gap: 8px;
+    padding: 0 4px;
+  }
+  .otp-box {
+    width: 42px;
+    height: 48px;
+    font-size: 1.2rem;
+    flex-shrink: 1;
+    min-width: 36px;
+  }
+}
+
+@media (max-width: 360px) {
+  .otp-container {
+    gap: 6px;
+  }
+  .otp-box {
+    width: 38px;
+    height: 44px;
+    font-size: 1.1rem;
+  }
+}
+
 .otp-box:focus {
   outline: none;
   border-color: var(--text-dark);
