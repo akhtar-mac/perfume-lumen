@@ -9,6 +9,11 @@ import Contact from './pages/Contact';
 import Wishlist from './pages/Wishlist';
 import Profile from './pages/Profile';
 import ProfileSetup from './pages/ProfileSetup';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Refund from './pages/Refund';
+import FAQ from './pages/FAQ';
+import About from './pages/About';
 import { useSiteStore } from './store/useSiteStore';
 import { useProductStore } from './store/useProductStore';
 import { useAuthStore } from './store/useAuthStore';
@@ -52,6 +57,7 @@ function App() {
     document.documentElement.style.setProperty('--accent-pink', themeAccentPink);
     document.documentElement.style.setProperty('--accent-blue', themeAccentBlue);
   }, [themePrimaryYellow, themeAccentPink, themeAccentBlue]);
+
   return (
     <ErrorBoundary>
       <Router>
@@ -66,6 +72,11 @@ function App() {
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refund" element={<Refund />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/about" element={<About />} />
           </Routes>
         </Layout>
       </Router>

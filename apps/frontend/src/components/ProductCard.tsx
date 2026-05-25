@@ -14,13 +14,24 @@ interface ProductCardProps {
   isBestseller?: boolean;
   rating?: number;
   reviewsCount?: number;
+  badge?: 'new' | 'trending' | 'bestseller' | 'sold-out';
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ id, images, title, price, originalPrice, isBestseller, rating = 4.8, reviewsCount = 120 }) => {
+const badgeConfig = {
+  'new': { label: 'NEW', color: 'var(--accent-blue)' },
+  'trending': { label: '🔥 TRENDING', color: '#FF6B35' },
+  'bestseller': { label: 'BESTSELLER', color: 'var(--primary-yellow)' },
+  'sold-out': { label: 'SOLD OUT', color: '#999' },
+};
+
+const ProductCard: React.FC<ProductCardProps> = ({ id, images, title, price, originalPrice, isBestseller, rating = 4.8, reviewsCount = 120, badge }) => {
   const { items, addToCart, updateQuantity } = useCartStore();
   const { profile, toggleWishlist } = useAuthStore();
   const cartItem = items.find(item => item.id === id);
   const isWishlisted = profile?.wishlist?.includes(id);
+
+  // Determine which badge to show
+  const activeBadge = badge || (isBestseller ? 'bestseller' : undefined);
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -33,19 +44,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, images, title, price, ori
     addToCart({
       id,
       title,
-      price: parseInt(price.replace(/[^0-9]/g, '')), // Parse int from string "₹999"
+      price: parseInt(price.replace(/[^0-9]/g, '')),
       image: images[0]
     });
   };
+
   return (
     <div className="product-card">
       <Link to={`/product/${id}`} className="product-image-wrapper">
         <img src={images[0]} alt={title} className="product-image main-image" />
         <img src={images[1] || images[0]} alt={`${title} Notes`} className="product-image hover-image" />
-        {isBestseller && <div className="product-badge">BESTSELLER</div>}
+        
+        {/* Badge */}
+        {activeBadge && badgeConfig[activeBadge] && (
+          <div className="product-badge" style={{ backgroundColor: badgeConfig[activeBadge].color }}>
+            {badgeConfig[activeBadge].label}
+          </div>
+        )}
+        
         <button className="wishlist-toggle-btn" onClick={handleWishlist}>
           <Heart fill={isWishlisted ? "var(--accent-pink)" : "none"} color={isWishlisted ? "var(--accent-pink)" : "var(--text-dark)"} size={20} />
         </button>
+        
         {cartItem ? (
           <div className="quick-add-btn" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', bottom: 0 }} onClick={e => e.preventDefault()}>
             <button onClick={() => updateQuantity(id, cartItem.quantity - 1)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><Minus size={20} /></button>

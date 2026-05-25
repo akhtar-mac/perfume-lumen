@@ -4,48 +4,84 @@ import { useProductStore } from '../store/useProductStore';
 import { useSiteStore } from '../store/useSiteStore';
 import './Shop.css';
 
+const CATEGORIES = [
+  { id: 'all', label: 'All Perfumes', icon: '🛍️' },
+  { id: 'men', label: 'For Men', icon: '👔' },
+  { id: 'women', label: 'For Women', icon: '💄' },
+  { id: 'unisex', label: 'Unisex', icon: '✨' },
+];
+
 const Shop: React.FC = () => {
   const products = useProductStore(state => state.products);
   const bestsellerIds = useSiteStore(state => state.bestsellerIds);
   const [sortBy, setSortBy] = React.useState('default');
+  const [activeCategory, setActiveCategory] = React.useState('all');
 
-  const sortedProducts = React.useMemo(() => {
-    let sorted = [...products];
+  const filteredProducts = React.useMemo(() => {
+    let filtered = [...products];
+    
+    // Filter by category
+    if (activeCategory !== 'all') {
+      filtered = filtered.filter(p => p.category === activeCategory);
+    }
+    
+    // Sort
     switch (sortBy) {
       case 'price-asc':
-        sorted.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => a.price - b.price);
         break;
       case 'price-desc':
-        sorted.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => b.price - a.price);
         break;
       case 'rating':
-        sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       case 'reviews':
-        sorted.sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0));
+        filtered.sort((a, b) => (b.reviewsCount || 0) - (a.reviewsCount || 0));
         break;
       case 'bestseller':
-        sorted.sort((a, b) => {
+        filtered.sort((a, b) => {
           const aIsBest = bestsellerIds.includes(a.id) ? 1 : 0;
           const bIsBest = bestsellerIds.includes(b.id) ? 1 : 0;
           return bIsBest - aIsBest;
         });
         break;
+      case 'new':
+        filtered.sort((a, b) => {
+          const aIsNew = a.badge === 'new' ? 1 : 0;
+          const bIsNew = b.badge === 'new' ? 1 : 0;
+          return bIsNew - aIsNew;
+        });
+        break;
       default:
         break;
     }
-    return sorted;
-  }, [products, sortBy, bestsellerIds]);
+    return filtered;
+  }, [products, sortBy, bestsellerIds, activeCategory]);
 
   return (
     <div className="shop-page">
       <div className="shop-header">
         <div className="container">
           <h1>ALL PERFUMES 🛍️</h1>
-          <p>Discover our complete collection of 30 designer-inspired fragrances 💎</p>
+          <p>Discover our complete collection of {products.length} designer-inspired fragrances 💎</p>
         </div>
       </div>
       <div className="container shop-container">
+        {/* Category Filters */}
+        <div className="category-filters">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              className={`category-btn ${activeCategory === cat.id ? 'active' : ''}`}
+              onClick={() => setActiveCategory(cat.id)}
+            >
+              <span className="cat-icon">{cat.icon}</span>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
         <div className="shop-controls">
           <div className="sort-wrapper">
             <label htmlFor="sort">Sort By:</label>
@@ -56,6 +92,7 @@ const Shop: React.FC = () => {
               className="sort-select"
             >
               <option value="default">Recommended</option>
+              <option value="new">New Arrivals First</option>
               <option value="bestseller">Bestsellers First</option>
               <option value="price-asc">Price: Low to High</option>
               <option value="price-desc">Price: High to Low</option>
@@ -64,11 +101,11 @@ const Shop: React.FC = () => {
             </select>
           </div>
           <div className="results-count">
-            Showing {sortedProducts.length} products
+            Showing {filteredProducts.length} products
           </div>
         </div>
         <div className="product-grid">
-          {sortedProducts.map(product => (
+          {filteredProducts.map(product => (
             <ProductCard 
               key={product.id}
               id={product.id}
@@ -79,9 +116,15 @@ const Shop: React.FC = () => {
               isBestseller={bestsellerIds.includes(product.id)}
               rating={product.rating}
               reviewsCount={product.reviewsCount}
+              badge={product.badge}
             />
           ))}
         </div>
+        {filteredProducts.length === 0 && (
+          <div className="no-results">
+            <p>No products found in this category.</p>
+          </div>
+        )}
       </div>
     </div>
   );

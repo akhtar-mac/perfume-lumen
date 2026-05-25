@@ -8,7 +8,7 @@ import './ProductGrid.css';
 const ProductGrid: React.FC = () => {
   const { products } = useProductStore();
   const { gridTitle, bestsellerIds } = useSiteStore();
-  const homeProducts = products.slice(0, 4);
+  const homeProducts = products.slice(0, 8);
 
   return (
     <section className="product-section container">
@@ -25,6 +25,7 @@ const ProductGrid: React.FC = () => {
             isBestseller={bestsellerIds.includes(product.id)}
             rating={product.rating}
             reviewsCount={product.reviewsCount}
+            badge={product.badge}
           />
         ))}
       </div>
