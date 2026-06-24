@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@lumen/shared": "*",
+    "@sentry/react": "^10.60.0",
     "@supabase/supabase-js": "^2.105.1",
     "bcryptjs": "^3.0.3",
     "firebase": "^12.13.0",

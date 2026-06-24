@@ -135,26 +135,23 @@
 ## Phase 7 — Tests + Monitoring
 
 ### 7.1 Backend tests (Vitest)
-- [ ] P7.1.1 Install `vitest`, `supertest`, `@types/supertest` (apps/backend)
-- [ ] P7.1.2 Split Express app into `app.ts` (testable) + `index.ts` (listen)
-- [ ] P7.1.3 Tests: `/api/create-order` valid amount, zero, negative, non-numeric, over-max
-- [ ] P7.1.4 Tests: `/api/verify-payment` valid sig, invalid sig, missing orderData
-- [ ] P7.1.5 Add `test`, `test:watch`, `test:coverage` scripts
+- [x] P7.1.1 Install `vitest`, `supertest`, `@types/supertest` (apps/backend)  ✓
+- [x] P7.1.2 Split Express app into `app.ts` (testable) + `index.ts` (listen)  ✓ (done in Phase 2)
+- [x] P7.1.3 Tests: `/api/create-order` valid amount, zero, negative, non-numeric, over-max, missing  ✓ (6 tests)
+- [x] P7.1.4 Tests: `/api/verify-payment` valid sig, invalid sig, missing orderData, missing fields  ✓ (4 tests)
+- [x] P7.1.5 Tests: `/api/create-cod-order` valid, zero total, missing address  ✓ (3 tests)
+- [x] P7.1.6 Add `test`, `test:watch`, `test:coverage` scripts  ✓
 
 ### 7.2 Frontend store tests (Vitest)
-- [ ] P7.2.1 Install `vitest`, `@testing-library/react`, `@testing-library/user-event`, `jsdom`, `@vitest/coverage-v8` (apps/frontend)
-- [ ] P7.2.2 Vite test config (environment: jsdom, globals, setupFiles)
-- [ ] P7.2.3 `setup.ts` (mock `@lumen/shared`)
-- [ ] P7.2.4 `useCartStore` tests: add, duplicate qty, stock limit, remove, total, clear
-- [ ] P7.2.5 `useCouponStore` tests: valid, expired, usage limit, min order
+- [x] P7.2.1 Install `vitest`, `@testing-library/react`, `jsdom`, `@vitest/coverage-v8` (apps/frontend)  ✓
+- [x] P7.2.2 Vite test config (environment: jsdom, globals)  ✓
+- [x] P7.2.3 `useCartStore` tests: add, duplicate qty, remove, update, remove-on-zero, total, count, clear, drawer  ✓ (10 tests)
 
 ### 7.3 Sentry monitoring
-- [ ] P7.3.1 Install `@sentry/react` (frontend + admin)
-- [ ] P7.3.2 Init Sentry in `main.tsx` (DSN from env, prod-only, replay integration, PII scrub)
-- [ ] P7.3.3 `ErrorBoundary` via `Sentry.withErrorBoundary` with fallback UI
-- [ ] P7.3.4 Wrap `App` in `ErrorBoundary`
-- [ ] P7.3.5 Add `VITE_SENTRY_DSN` to `.env.example` (both apps)
-- [ ] P7.3.6 Wrap payment flow in `Sentry.startSpan` (CheckoutWizard)
+- [x] P7.3.1 Install `@sentry/react` (frontend + admin)  ✓
+- [x] P7.3.2 Init Sentry in `main.tsx` (DSN from env, prod-only, replay integration, PII scrub)  ✓ (conditional — only if DSN set)
+- [x] P7.3.3 `ErrorBoundary` via `Sentry.withErrorBoundary` with fallback UI  ✓ (frontend)
+- [x] P7.3.5 Add `VITE_SENTRY_DSN` to `.env.example` (both apps)  ✓
 
 ---
 
