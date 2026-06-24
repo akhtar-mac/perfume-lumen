@@ -121,16 +121,14 @@
 
 ## Phase 6 — Shared Package + Supabase Types
 
-- [ ] P6.1 Create `packages/shared/package.json` (`@lumen/shared`)
-- [ ] P6.2 Create `packages/shared/tsconfig.json`
-- [ ] P6.3 Move `lib/supabase.ts`, `lib/firebase.ts`, `data/products.ts` into `packages/shared/src/`
-- [ ] P6.4 `packages/shared/src/index.ts` barrel export
-- [ ] P6.5 Add `@lumen/shared: "*"` dep to both apps' `package.json`
-- [ ] P6.6 Generate Supabase types → `packages/shared/src/types/db.ts` (or typed stub)
-- [ ] P6.7 Replace `as any` in `Admin.tsx` (lines 27, 51, 95) with generated types
-- [ ] P6.8 Update import paths across frontend + admin
-- [ ] P6.9 Migration `005_rls_policies.sql`: RLS on products, orders, profiles, admin_users (no anon), coupons, site_settings, contact_messages
+- [x] P6.1 Create `packages/shared/package.json` (`@lumen/shared`)  ✓
+- [x] P6.2 Create `packages/shared/tsconfig.json`  ✓
+- [x] P6.3 `packages/shared/src/index.ts` barrel export  ✓ (types for now; lib/data move deferred to avoid import churn)
+- [x] P6.5 Add `@lumen/shared: "*"` dep to both apps' `package.json`  ✓
+- [x] P6.6 Supabase types stub → `packages/shared/src/types/db.ts`  ✓ (regenerate with `supabase gen types`)
+- [x] P6.9 Migration `005_rls_policies.sql`: RLS on products, orders, profiles, admin_users (no anon), coupons, site_settings, contact_messages  ✓
 - [!] P6.10 YOU: apply RLS migration in Supabase SQL editor + move admin login to backend
+- [~] P6.4/P6.7/P6.8 Move shared lib/data + replace `any` — deferred (larger refactor, current code works)
 
 ---
 
