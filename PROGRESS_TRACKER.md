@@ -56,15 +56,15 @@
 
 ## Phase 2 — Backend Hardening
 
-- [ ] P2.1 Install `zod`, `pino`, `pino-http` (apps/backend)
-- [ ] P2.2 Create `apps/backend/src/schemas.ts` (`CreateOrderSchema`, `VerifyPaymentSchema` with full `orderData`)
-- [ ] P2.3 Apply Zod validation middleware on both endpoints
-- [ ] P2.4 Replace `console.*` with pino logger
-- [ ] P2.5 Add `GET /health` returning `{status, ts}`
-- [ ] P2.6 Create `apps/backend/Dockerfile` (node:20-alpine, non-root user, healthcheck)
-- [ ] P2.7 Create `apps/backend/.env.example` (PORT, RAZORPAY_*, FRONTEND_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, LOG_LEVEL)
-- [ ] P2.8 Add `lint`, `test`, `typecheck` scripts to `apps/backend/package.json`
-- [ ] P2.9 Add ESLint config to `apps/backend`
+- [x] P2.1 Install `zod`, `pino`, `pino-http` (apps/backend)  ✓
+- [x] P2.2 Create `apps/backend/src/schemas.ts` (`CreateOrderSchema`, `VerifyPaymentSchema` with full `orderData`)  ✓
+- [x] P2.3 Apply Zod validation middleware on both endpoints  ✓
+- [x] P2.4 Replace `console.*` with pino logger  ✓ (structured JSON logs)
+- [x] P2.5 Add `GET /health` returning `{status, ts}`  ✓
+- [x] P2.6 Create `apps/backend/Dockerfile` (node:20-alpine, non-root user, healthcheck)  ✓
+- [x] P2.7 Create `apps/backend/.env.example`  ✓ (done in Phase 3)
+- [x] P2.8 Add `lint`, `test`, `typecheck` scripts to `apps/backend/package.json`  ✓
+- [x] P2.9 Add ESLint config to `apps/backend`  ✓ (eslint.config.mjs)
 
 ---
 

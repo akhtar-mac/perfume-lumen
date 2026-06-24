@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "ts-node-dev src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "echo \"No tests yet — Phase 7\" && exit 0"
   },
   "keywords": [],
   "author": "",
@@ -18,14 +21,21 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
-    "razorpay": "^2.9.6"
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "razorpay": "^2.9.6",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^24.12.2",
+    "@types/pino-http": "^5.8.4",
+    "eslint": "^10.5.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.0"
   }
 }
