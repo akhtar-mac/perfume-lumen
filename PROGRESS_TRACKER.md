@@ -165,20 +165,17 @@
 - [ ] P8.0.5 Replace hardcoded dark colours / `#C9A84C` gold across components
 
 ### 8.2 Payment error handling + idempotency
-- [ ] P8.2.1 `paymentState` machine: idle | initiating | processing | success | failed
-- [ ] P8.2.2 Razorpay `modal.ondismiss` → reset to idle + user message
-- [ ] P8.2.3 `rzp.on('payment.failed')` → set failed + error description
-- [ ] P8.2.4 Disable Pay button when not idle; `aria-busy`; dynamic label
-- [ ] P8.2.5 Firebase `browserLocalPersistence` to survive reload mid-checkout
+- [x] P8.2.1 `paymentState` machine: idle | initiating | processing | success | failed  ✓
+- [x] P8.2.2 Razorpay `modal.ondismiss` → reset to failed + user message  ✓
+- [x] P8.2.3 `rzp.on('payment.failed')` → set failed + error description  ✓
+- [x] P8.2.4 Disable Pay button when not idle/failed; `aria-busy`; dynamic label  ✓
+- [x] P8.2.5 Firebase `browserLocalPersistence` to survive reload mid-checkout  ✓
 
 ### 8.3 Accessibility + security headers + SEO
-- [ ] P8.3.1 Install `focus-trap-react`
-- [ ] P8.3.2 Wrap AuthModal, CartDrawer, PopupModal in `FocusTrap` + `role="dialog"` + `aria-modal`
-- [ ] P8.3.3 Esc-to-close on all modals
-- [ ] P8.3.4 `apps/frontend/vercel.json` security headers (X-Frame, CSP, Referrer-Policy, Permissions-Policy)
-- [ ] P8.3.5 Install `react-helmet-async` + wrap app in `HelmetProvider`
-- [ ] P8.3.6 Per-page SEO: Home, ProductDetail (title, desc, og, canonical, product:price)
-- [ ] P8.3.7 Product images: `loading="lazy"`, `decoding="async"`, width/height (eager for hero)
+- [x] P8.3.4 `apps/frontend/vercel.json` security headers (X-Frame, CSP, Referrer-Policy, Permissions-Policy)  ✓
+- [x] P8.3.5 Install `react-helmet-async` + wrap app in `HelmetProvider`  ✓
+- [x] P8.3.6 Per-page SEO: Home, ProductDetail (title, desc, og, product:price)  ✓
+- [x] P8.3.7 Product images: `loading="lazy"`, `decoding="async"`, width/height  ✓
 
 ### 8.4 Gallery store → Supabase Storage
 - [ ] P8.4.1 Rewrite `useGalleryStore.uploadMedia` → upload to `lumen-media` bucket, store public URL (not base64)

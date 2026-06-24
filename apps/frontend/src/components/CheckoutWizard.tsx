@@ -49,6 +49,8 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   
   // UI State
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentState, setPaymentState] = useState<'idle' | 'initiating' | 'processing' | 'success' | 'failed'>('idle');
+  const [paymentError, setPaymentError] = useState('');
   const [otpState, setOtpState] = useState<'idle' | 'success' | 'error'>('idle');
   const [isShaking, setIsShaking] = useState(false);
   const [timer, setTimer] = useState(30);
@@ -210,6 +212,11 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Idempotency guard — prevent double-clicks
+    if (paymentState !== 'idle' && paymentState !== 'failed') return;
+    setPaymentState('initiating');
+    setPaymentError('');
     setIsProcessing(true);
     
     try {
@@ -239,11 +246,13 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
         const codData = await codResponse.json();
         if (codData.success) {
           await fetchOrders();
+          setPaymentState('success');
           setIsProcessing(false);
           setStep(5);
           clearCart();
         } else {
-          alert('Failed to place order. Please try again.');
+          setPaymentError('Failed to place order. Please try again.');
+          setPaymentState('failed');
           setIsProcessing(false);
         }
         return;
@@ -252,7 +261,8 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
       // 1. Load Razorpay script dynamically
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
-        alert('Failed to load Razorpay SDK. Are you online?');
+        setPaymentError('Failed to load Razorpay SDK. Are you online?');
+        setPaymentState('failed');
         setIsProcessing(false);
         return;
       }
@@ -271,6 +281,8 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
         throw new Error('Failed to create Razorpay order');
       }
 
+      setPaymentState('processing');
+
       // 3. Open the Razorpay Popup
       const options = {
         key: env.VITE_RAZORPAY_KEY_ID,
@@ -287,9 +299,16 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
         theme: {
           color: '#1A1A1A'
         },
+        modal: {
+          ondismiss: () => {
+            setPaymentError('Payment was cancelled. You can try again.');
+            setPaymentState('failed');
+            setIsProcessing(false);
+          }
+        },
         handler: async function (response: any) {
           // 4. On success, verify payment signature on backend — backend persists the order
-          const apiUrl = env.VITE_API_URL;
+          const vApiUrl = env.VITE_API_URL;
           const orderPayload = {
             userId: user?.uid,
             items: items.map(item => ({
@@ -307,7 +326,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
               pincode: selectedAddress.pincode || '',
             } : undefined,
           };
-          const verifyResponse = await fetch(`${apiUrl}/api/verify-payment`, {
+          const verifyResponse = await fetch(`${vApiUrl}/api/verify-payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -323,11 +342,13 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
           if (verifyData.success) {
             // Order persisted server-side — refresh orders from DB and show success
             await fetchOrders();
+            setPaymentState('success');
             setIsProcessing(false);
             setStep(5);
             clearCart();
           } else {
-            alert('Payment verification failed! Please contact support.');
+            setPaymentError('Payment verification failed! Please contact support with your payment ID.');
+            setPaymentState('failed');
             setIsProcessing(false);
           }
         }
@@ -336,7 +357,11 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
       const rzp = new window.Razorpay(options);
       
       rzp.on('payment.failed', function (response: any) {
-        alert(`Payment Failed: ${response.error.description}`);
+        setPaymentError(
+          response?.error?.description ||
+          'Payment failed. Please try a different payment method.'
+        );
+        setPaymentState('failed');
         setIsProcessing(false);
       });
       
@@ -344,7 +369,8 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
 
     } catch (error) {
       console.error(error);
-      alert('Something went wrong initiating the payment.');
+      setPaymentError('Something went wrong initiating the payment. Please try again.');
+      setPaymentState('failed');
       setIsProcessing(false);
     }
   };
@@ -650,8 +676,17 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
                 </label>
               </div>
 
-              <button type="submit" className="btn-primary tm-btn" disabled={isProcessing}>
-                {isProcessing ? <><Loader className="spin" size={20} /> SECURING PAYMENT...</> : `PAY ₹${finalTotal}`}
+              {paymentError && (
+                <div className="payment-error" style={{ color: '#9B2335', background: '#FDF0F2', padding: '10px 14px', borderRadius: '8px', margin: '10px 0', fontSize: '0.9rem', fontWeight: 600 }}>
+                  {paymentError}
+                </div>
+              )}
+
+              <button type="submit" className="btn-primary tm-btn" disabled={paymentState === 'initiating' || paymentState === 'processing'} aria-busy={paymentState === 'initiating' || paymentState === 'processing'}>
+                {paymentState === 'initiating' && <><Loader className="spin" size={20} /> PREPARING PAYMENT...</>}
+                {paymentState === 'processing' && <><Loader className="spin" size={20} /> PROCESSING...</>}
+                {paymentState === 'failed' && `TRY AGAIN — PAY ₹${finalTotal}`}
+                {(paymentState === 'idle' || paymentState === 'success') && `PAY ₹${finalTotal}`}
               </button>
             </form>
           )}

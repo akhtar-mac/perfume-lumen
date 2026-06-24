@@ -40,8 +40,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, images, title, price, ori
   return (
     <div className="product-card">
       <Link to={`/product/${id}`} className="product-image-wrapper">
-        <img src={images[0]} alt={title} className="product-image main-image" />
-        <img src={images[1] || images[0]} alt={`${title} Notes`} className="product-image hover-image" />
+        <img src={images[0]} alt={title} className="product-image main-image" loading="lazy" decoding="async" width={400} height={533} />
+        <img src={images[1] || images[0]} alt={`${title} Notes`} className="product-image hover-image" loading="lazy" decoding="async" width={400} height={533} />
         {isBestseller && <div className="product-badge">BESTSELLER</div>}
         <button className="wishlist-toggle-btn" onClick={handleWishlist}>
           <Heart fill={isWishlisted ? "var(--accent-pink)" : "none"} color={isWishlisted ? "var(--accent-pink)" : "var(--text-dark)"} size={20} />

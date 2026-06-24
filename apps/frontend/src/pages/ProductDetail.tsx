@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useProductStore } from '../store/useProductStore';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -49,6 +50,15 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="product-detail-page">
+      <Helmet>
+        <title>{product.title} | LUMEN Parfum</title>
+        <meta name="description" content={`${product.title} — Eau de Parfum. ${product.description?.slice(0, 120) || ''}`} />
+        <meta property="og:title" content={`${product.title} | LUMEN Parfum`} />
+        <meta property="og:image" content={product.images?.[0] || ''} />
+        <meta property="og:type" content="product" />
+        <meta property="product:price:amount" content={String(product.price)} />
+        <meta property="product:price:currency" content="INR" />
+      </Helmet>
       <div className="container detail-container">
         <div className="detail-image-col">
           <div className="detail-image-wrapper">

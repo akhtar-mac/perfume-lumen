@@ -2,6 +2,7 @@ import './lib/env';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import * as Sentry from '@sentry/react';
+import { HelmetProvider } from 'react-helmet-async';
 import App from './App.tsx';
 import './index.css';
 
@@ -45,7 +46,9 @@ const ErrorBoundary = dsn
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      <HelmetProvider>
+        <App />
+      </HelmetProvider>
     </ErrorBoundary>
   </React.StrictMode>,
 );
