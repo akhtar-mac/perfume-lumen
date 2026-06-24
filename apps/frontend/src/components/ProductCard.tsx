@@ -12,11 +12,11 @@ interface ProductCardProps {
   price: string;
   originalPrice: string;
   isBestseller?: boolean;
-  rating?: number;
+  rating?: number | null;
   reviewsCount?: number;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ id, images, title, price, originalPrice, isBestseller, rating = 4.8, reviewsCount = 120 }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ id, images, title, price, originalPrice, isBestseller, rating = null, reviewsCount = 0 }) => {
   const { items, addToCart, updateQuantity } = useCartStore();
   const { profile, toggleWishlist } = useAuthStore();
   const cartItem = items.find(item => item.id === id);
@@ -63,9 +63,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, images, title, price, ori
         <Link to={`/product/${id}`}>
           <h3 className="product-title">{title}</h3>
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.85rem' }}>
-          <span style={{ color: '#fbbf24' }}>{'★'.repeat(Math.round(rating))}{'☆'.repeat(5 - Math.round(rating))}</span>
-          <span style={{ color: '#666' }}>({reviewsCount})</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.85rem', minHeight: rating ? 'auto' : '1.2rem' }}>
+          {rating !== null && rating !== undefined && (
+            <>
+              <span style={{ color: '#fbbf24' }}>{'★'.repeat(Math.round(rating))}{'☆'.repeat(5 - Math.round(rating))}</span>
+              <span style={{ color: '#666' }}>({reviewsCount})</span>
+            </>
+          )}
         </div>
         <div className="product-price">
           <span className="current-price">{price}</span>

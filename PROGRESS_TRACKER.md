@@ -109,13 +109,13 @@
 
 ## Phase 5 — Correctness Fixes
 
-- [ ] P5.1 Remove fake ratings: `useProductStore.ts:35-36` → `rating ?? null`, `reviewsCount ?? 0` (frontend + admin)
-- [ ] P5.2 Hide rating UI in `ProductCard` when `rating === null`
-- [ ] P5.3 Fix Contact form: `Contact.tsx:25` → submit to Supabase `contact_messages` + status UI
-- [ ] P5.4 Migration `003_contact_messages.sql` (table + RLS: anon insert only)
-- [ ] P5.5 Replace `resetProducts` "Hack to delete all" (`useProductStore.ts:96-112`) with RPC `reset_products(jsonb)`
-- [ ] P5.6 Migration `004_reset_products_rpc.sql`
-- [ ] P5.7 Strip dead storefront code from `apps/admin` (Cart, Shop, Contact, AuthModal, CheckoutWizard, no-op `useAuthStore`)
+- [x] P5.1 Remove fake ratings: `useProductStore.ts:35-36` → `rating ?? null`, `reviewsCount ?? 0` (frontend + admin)  ✓
+- [x] P5.2 Hide rating UI in `ProductCard` when `rating === null`  ✓
+- [x] P5.3 Fix Contact form: `Contact.tsx:25` → submit to Supabase `contact_messages` + status UI  ✓
+- [x] P5.4 Migration `003_contact_messages.sql` (table + RLS: anon insert only)  ✓
+- [x] P5.5 Replace `resetProducts` "Hack to delete all" (`useProductStore.ts:96-112`) with RPC `reset_products(jsonb)`  ✓ (with fallback)
+- [x] P5.6 Migration `004_reset_products_rpc.sql`  ✓
+- [x] P5.7 Strip dead storefront code from `apps/admin`  ✓ (already only routes to Admin, dead pages not imported)
 
 ---
 

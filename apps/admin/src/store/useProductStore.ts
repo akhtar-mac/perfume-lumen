@@ -31,9 +31,9 @@ export const useProductStore = create<ProductStore>()(
           videoUrl: p.video_url,
           description: p.description,
           notes: p.notes,
-          inStock: p.in_stock !== false, // default true if null
-          rating: p.rating || Number((3.4 + Math.random() * 1.5).toFixed(1)), // 3.4 to 4.9 fake default
-          reviewsCount: p.reviews_count || Math.floor(Math.random() * 200 + 50) // fake default
+          inStock: p.in_stock !== false,
+          rating: p.rating ?? null,
+          reviewsCount: p.reviews_count ?? 0
         }));
         set({ products: formattedProducts, isLoading: false });
       } else {
@@ -94,9 +94,6 @@ export const useProductStore = create<ProductStore>()(
 
     resetProducts: async () => {
       set({ products: PRODUCTS });
-      // Delete all and re-insert for a full reset
-      await supabase.from('products').delete().neq('id', 0); // Hack to delete all
-      
       const inserts = PRODUCTS.map(p => ({
         id: p.id,
         title: p.title,
@@ -109,7 +106,16 @@ export const useProductStore = create<ProductStore>()(
         rating: p.rating,
         reviews_count: p.reviewsCount
       }));
-      await supabase.from('products').insert(inserts);
+
+      // Try transactional RPC first; fallback to delete+insert if not deployed
+      const { error: rpcError } = await supabase.rpc('reset_products', {
+        new_products: JSON.stringify(inserts)
+      });
+
+      if (rpcError) {
+        await supabase.from('products').delete().neq('id', 0);
+        await supabase.from('products').insert(inserts);
+      }
     },
 
     submitCustomerRating: async (id, newRating) => {
@@ -117,8 +123,8 @@ export const useProductStore = create<ProductStore>()(
       const product = state.products.find(p => p.id === id);
       if (!product) return;
 
-      const currentRating = product.rating || 4.5;
-      const currentCount = product.reviewsCount || 120;
+      const currentRating = product.rating ?? 0;
+      const currentCount = product.reviewsCount ?? 0;
       
       const updatedRating = Number((((currentRating * currentCount) + newRating) / (currentCount + 1)).toFixed(1));
       const updatedCount = currentCount + 1;
