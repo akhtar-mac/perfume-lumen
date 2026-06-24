@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import bcrypt from 'bcryptjs';
 import ScrollToTop from './components/ScrollToTop';
 import Admin from './pages/Admin';
 import { useSiteStore } from './store/useSiteStore';
@@ -10,11 +11,35 @@ import { supabase } from './lib/supabase';
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { auth } from './lib/firebase';
 
-// Extend Window for recaptcha
 declare global {
   interface Window {
     adminRecaptchaVerifier?: RecaptchaVerifier;
   }
+}
+
+interface AdminSession {
+  phone: string;
+  role: string;
+  permissions: string[];
+  expiresAt: number;
+}
+
+function isSessionValid(): boolean {
+  const raw = localStorage.getItem('adminSession');
+  if (!raw) return false;
+  try {
+    const session: AdminSession = JSON.parse(raw);
+    return session.expiresAt > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+function clearAdminSession() {
+  localStorage.removeItem('adminSession');
+  localStorage.removeItem('adminPhone');
+  localStorage.removeItem('adminRole');
+  localStorage.removeItem('adminPermissions');
 }
 
 function App() {
@@ -22,9 +47,7 @@ function App() {
   const { fetchProducts } = useProductStore();
   const initializeAuth = useAuthStore(state => state.initialize);
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('adminAuth') === 'true';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => isSessionValid());
   const [step, setStep] = useState<'login' | 'otp'>('login');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -39,6 +62,14 @@ function App() {
     fetchSettings();
     fetchProducts();
     initializeAuth();
+    const checkExpiry = () => {
+      if (!isSessionValid()) {
+        clearAdminSession();
+        setIsAuthenticated(false);
+      }
+    };
+    const interval = setInterval(checkExpiry, 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -55,33 +86,39 @@ function App() {
     let role = '';
     let permissions: string[] = [];
 
-    // Hardcoded superadmin fallback
-    if (phone === '7972272861' && password === 'Admin@1999') {
-      role = 'superadmin';
-      permissions = ['overview', 'products', 'coupons', 'customers', 'admins', 'theme', 'hero', 'content'];
-    } else {
-      // Check database for other admins
-      try {
-        const { data, error: dbError } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('phone', phone)
-          .eq('password', password)
-          .single();
+    try {
+      const { data, error: dbError } = await supabase
+        .from('admin_users')
+        .select('phone, password, password_hash, role, permissions')
+        .eq('phone', phone)
+        .single();
 
-        if (dbError || !data) {
-          setError('Invalid phone number or password');
-          setIsLoading(false);
-          return;
-        }
-
-        role = data.role || 'admin';
-        permissions = data.permissions || ['overview', 'products', 'coupons', 'customers', 'theme', 'hero', 'content'];
-      } catch {
-        setError('Login failed. Please try again.');
+      if (dbError || !data) {
+        setError('Invalid phone number or password');
         setIsLoading(false);
         return;
       }
+
+      const hash = data.password_hash || data.password;
+      if (!hash) {
+        setError('Invalid phone number or password');
+        setIsLoading(false);
+        return;
+      }
+
+      const valid = await bcrypt.compare(password, hash);
+      if (!valid) {
+        setError('Invalid phone number or password');
+        setIsLoading(false);
+        return;
+      }
+
+      role = data.role || 'admin';
+      permissions = data.permissions || ['overview', 'products', 'coupons', 'customers', 'theme', 'hero', 'content'];
+    } catch {
+      setError('Login failed. Please try again.');
+      setIsLoading(false);
+      return;
     }
 
     // Credentials verified, now send real OTP
@@ -119,11 +156,17 @@ function App() {
 
     try {
       await confirmationResult.confirm(otpString);
-      setIsAuthenticated(true);
-      localStorage.setItem('adminAuth', 'true');
+      const session: AdminSession = {
+        phone,
+        role: tempRole,
+        permissions: tempPermissions,
+        expiresAt: Date.now() + 8 * 60 * 60 * 1000,
+      };
+      localStorage.setItem('adminSession', JSON.stringify(session));
       localStorage.setItem('adminPhone', phone);
       localStorage.setItem('adminRole', tempRole);
       localStorage.setItem('adminPermissions', JSON.stringify(tempPermissions));
+      setIsAuthenticated(true);
     } catch (err: any) {
       setError('Invalid OTP. Please check your SMS and try again.');
     } finally {

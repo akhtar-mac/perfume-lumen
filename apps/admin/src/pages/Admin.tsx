@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Pencil, RotateCcw, Image as ImageIcon, LayoutDashboard, Package, Palette, Type, TrendingUp, Users, DollarSign, Tag, Trash2, Power, Shield } from 'lucide-react';
+import bcrypt from 'bcryptjs';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import EditProductModal from '../components/EditProductModal';
@@ -219,9 +220,10 @@ const Admin: React.FC = () => {
     setAdminMessage('');
     setAdminError('');
     try {
+      const passwordHash = await bcrypt.hash(newAdminPass, 12);
       const { data, error } = await supabase.from('admin_users').insert({
         phone: newAdminPhone,
-        password: newAdminPass,
+        password_hash: passwordHash,
         role: newAdminRole
       }).select().single();
       
@@ -262,8 +264,9 @@ const Admin: React.FC = () => {
     if (!myPhone) return;
     
     try {
+      const passwordHash = await bcrypt.hash(adminPassChange, 12);
       const { error } = await supabase.from('admin_users').update({
-        password: adminPassChange
+        password_hash: passwordHash
       }).eq('phone', myPhone);
       
       if (error) throw error;
@@ -815,7 +818,7 @@ const Admin: React.FC = () => {
                         </div>
                         <div className="form-group">
                           <label>Password</label>
-                          <input type="text" value={newAdminPass} onChange={e => setNewAdminPass(e.target.value)} required className="admin-input" placeholder="Secure password" />
+                          <input type="password" value={newAdminPass} onChange={e => setNewAdminPass(e.target.value)} required className="admin-input" placeholder="Secure password" />
                         </div>
                         <div className="form-group">
                           <label>Role</label>
@@ -835,7 +838,7 @@ const Admin: React.FC = () => {
                     <form onSubmit={handleChangePassword} className="admin-form">
                       <div className="form-group">
                         <label>New Password</label>
-                        <input type="text" value={adminPassChange} onChange={e => setAdminPassChange(e.target.value)} required className="admin-input" placeholder="New secure password" />
+                        <input type="password" value={adminPassChange} onChange={e => setAdminPassChange(e.target.value)} required className="admin-input" placeholder="New secure password" />
                       </div>
                       <button type="submit" className="btn-primary">UPDATE PASSWORD</button>
                     </form>

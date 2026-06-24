@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { env } from './lib/env';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
@@ -34,7 +35,7 @@ function App() {
     // Ping Render Backend to verify connection
     const checkBackend = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL;
+        const apiUrl = env.VITE_API_URL;
         if (apiUrl) {
           const res = await fetch(`${apiUrl}/api/health`);
           const data = await res.json();

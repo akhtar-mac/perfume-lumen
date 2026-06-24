@@ -7,6 +7,7 @@ import type { Address } from '../store/useAuthStore';
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { loadRazorpayScript } from '../lib/razorpay';
+import { env } from '../lib/env';
 import './CheckoutWizard.css';
 import { useCouponStore } from '../store/useCouponStore';
 
@@ -234,7 +235,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
       }
 
       // 2. Ask our backend to create a Razorpay Order ID
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = env.VITE_API_URL;
       const orderResponse = await fetch(`${apiUrl}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -249,7 +250,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
 
       // 3. Open the Razorpay Popup
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Use the test key safely exposed
+        key: env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'Lumen Perfumes',
@@ -265,7 +266,7 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
         },
         handler: async function (response: any) {
           // 4. On success, verify payment signature on backend
-          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+          const apiUrl = env.VITE_API_URL;
           const verifyResponse = await fetch(`${apiUrl}/api/verify-payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

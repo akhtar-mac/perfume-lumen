@@ -1,0 +1,399 @@
+================================================================================
+LUMEN (perf monorepo) — PRODUCTION-READINESS REVIEW SUMMARY
+================================================================================
+
+PROJECT: D2C perfume e-commerce storefront ("LUMEN")
+LOCATION: /Users/ravan/Documents/perf
+STACK: React 19 + Vite 6 + Zustand + Firebase phone-OTP + Supabase + Razorpay
+LAYOUT:
+  apps/frontend  — customer storefront
+  apps/admin     — admin dashboard (phone+password+OTP gate)
+  apps/backend   — 77-line Express payment API (create-order, verify-payment)
+  packages/shared — EMPTY; all code duplicated across frontend & admin
+
+VERDICT: Competent prototype, NOT production-ready.
+
+================================================================================
+ALL ISSUES FOUND (by severity)
+================================================================================
+
+----------------------------------------
+CRITICAL (security + data integrity)
+----------------------------------------
+
+1. COMMITTED SECRET
+   - apps/backend/.env tracked in git (Razorpay key secret "QBnxeyL8yfN7fuEVp2gV7w4f")
+   - .gitignore ignores *.local, NOT .env
+   - File: apps/backend/.env:3
+
+2. HARDCODED SUPERADMIN PASSWORD IN CLIENT BUNDLE
+   - apps/admin/src/App.tsx:59
+     (phone === '7972272861' && password === 'Admin@1999')
+   - Trivially extractable from built JS
+
+3. ADMIN AUTH IS localStorage-ONLY
+   - apps/admin/src/App.tsx:25-27  (localStorage.getItem('adminAuth') === 'true')
+   - Setting adminAuth=true in devtools bypasses login entirely
+   - No server session / JWT
+
+4. PLAINTEXT ADMIN PASSWORDS in admin_users table
+   - apps/admin/src/App.tsx:69        (.eq('password', password))
+   - apps/admin/src/pages/Admin.tsx:247-251  (cleartext insert)
+   - apps/admin/src/components/EditAdminModal.tsx:46  (cleartext update)
+   - Password input uses type="text" at Admin.tsx:846
+
+5. ORDER CREATION NOT TIED TO PAYMENT VERIFICATION
+   - backend /api/verify-payment only returns {success:true}, persists nothing
+     (apps/backend/src/index.ts:65)
+   - Frontend writes order to Supabase AFTER verification
+     (apps/frontend/src/components/CheckoutWizard.tsx:281-287)
+   - Crash between verify + write = paid order with NO DB record
+
+6. NO SUPABASE RLS IN REPO
+   - All DB access uses anon key from browser
+     (apps/frontend/src/lib/supabase.ts:4-6, apps/admin/src/lib/supabase.ts:4-6)
+   - Tables at risk: products, orders, profiles, admin_users (reads passwords!),
+     coupons, site_settings
+   - If RLS open -> full compromise. Biggest single blocker.
+
+7. UNAUTHENTICATED, UNTHROTTLED /api/create-order
+   - apps/backend/src/index.ts:26
+
+----------------------------------------
+HIGH
+----------------------------------------
+
+8. VITE_API_URL NEVER DEFINED
+   - CheckoutWizard falls back to http://localhost:3000
+     (apps/frontend/src/components/CheckoutWizard.tsx:237, 268)
+   - App.tsx:37 silently skips health check if unset
+   - Prepaid checkout BREAKS in production
+
+9. NO INPUT VALIDATION ANYWHERE
+   - Backend multiplies amount by 100 with no type/range check
+     (apps/backend/src/index.ts:28-35)
+   - No zod/joi/express-validator
+
+10. RACE CONDITIONS (client-side read-modify-write)
+    - apps/admin/src/store/useSiteStore.ts:69-77  (incrementVisitor)
+    - apps/*/src/store/useOrderStore.ts:102-105  (coupon-use increment)
+    - Comments admit "Supabase RPC is better"
+
+11. FAKE RATINGS
+    - apps/*/src/store/useProductStore.ts:35-36
+      rating || Number((3.4 + Math.random()*1.5)...)
+      reviewsCount || Math.floor(Math.random()*200+50)
+    - Misleads customers
+
+12. SIGNATURE CHECK NOT TIMING-SAFE
+    - apps/backend/src/index.ts:63 uses ===
+    - Should use crypto.timingSafeEqual
+
+13. `any` TYPES EVERYWHERE (no generated Supabase types)
+    - apps/admin/src/pages/Admin.tsx:27   (adminUsers: any[])
+    - apps/admin/src/pages/Admin.tsx:51   (dbUpdate: any)
+    - apps/admin/src/pages/Admin.tsx:95   (updates: any)
+
+----------------------------------------
+MEDIUM
+----------------------------------------
+
+14. resetProducts NON-TRANSACTIONAL
+    - apps/*/src/store/useProductStore.ts:96-112
+    - delete().neq('id', 0) "Hack to delete all" then insert
+    - Failure mid-way leaves empty catalog
+
+15. GALLERY STORES base64 IN localStorage
+    - apps/*/src/store/useGalleryStore.ts  (key: lumen-gallery)
+    - Videos exceed ~5MB quota; not synced/backed up
+
+16. DEAD/DUPLICATED CODE IN ADMIN
+    - Ships unused storefront pages (Cart, Shop, Contact, AuthModal,
+      CheckoutWizard) never routed — admin/App.tsx only routes / -> Admin
+    - useAuthStore is a no-op but still imported
+
+17. BUILD ARTIFACTS + LOCKFILES COMMITTED
+    - apps/admin/dist, apps/frontend/dist, apps/backend/dist/index.js
+    - Per-app package-lock.json duplicates
+    - .DS_Store files present
+
+18. NO .env.example ANYWHERE
+
+19. CI IS BUILD-ONLY
+    - .github/workflows/deploy.yml runs npm run build only
+    - No lint, no tsc --noEmit, no tests, deploy step COMMENTED OUT
+    - Uses actions/checkout@v3 + setup-node@v3 (outdated; v4 current)
+
+20. CONTACT FORM NON-FUNCTIONAL
+    - apps/frontend/src/pages/Contact.tsx:25
+      onSubmit={(e) => e.preventDefault()}  — does nothing
+
+----------------------------------------
+LOW / HYGIENE
+----------------------------------------
+
+21. Dirty working tree + untracked files (useGalleryStore.ts, MediaSlideshow.*)
+22. README.md is leftover Vite boilerplate
+23. scratch/update_products.py one-off script in repo
+24. No .nvmrc / engines field
+25. Inline "Hack" comment at useProductStore.ts:98, "demo" at useSiteStore.ts:71
+    (no TODO/FIXME/@ts-ignore — code is clean of suppression directives)
+
+================================================================================
+MISSING CAPABILITIES MATRIX
+================================================================================
+
+| Capability            | frontend | admin | backend |
+|-----------------------|----------|-------|---------|
+| Tests                 |    NO    |  NO   |   NO    |
+| Env validation        |    NO    |  NO   |   NO    |
+| Lint in CI            |    NO    |  NO   |   NO    |
+| Docker                |   YES    | YES   |   NO    |
+| Helmet/sec headers    |    NO    |  NO   |   NO    |
+| Rate limiting         |    NO    |  NO   |   NO    |
+| Structured logging    |    NO    |  NO   |   NO    |
+| Error reporting       |    NO    |  NO   |   NO    |
+| DB migrations/ORM     |    NO    |  NO   |   NO    |
+| Supabase generated ty |    NO    |  NO   |   NO    |
+| Admin auth (real)     |    --    |  NO   |   NO    |
+
+================================================================================
+FRONTEND-SPECIFIC PRODUCTION ITEMS
+================================================================================
+
+----------------------------------------
+MUST-HAVE
+----------------------------------------
+
+1. STOP WRITING ORDERS CLIENT-SIDE
+   - apps/frontend/src/components/CheckoutWizard.tsx:281-287
+   - Backend should persist orders with service-role key
+
+2. ENV VALIDATION AT ENTRY
+   - apps/frontend/src/lib/env.ts (zod)
+   - Fail fast on missing VITE_API_URL, VITE_SUPABASE_URL,
+     VITE_SUPABASE_ANON_KEY, VITE_FIREBASE_*
+
+3. REMOVE FAKE RATINGS
+   - apps/frontend/src/store/useProductStore.ts:35-36
+   - Default null, hide rating UI until populated
+
+4. FIX CONTACT FORM
+   - apps/frontend/src/pages/Contact.tsx:25
+   - Wire to Supabase contact_messages insert or backend endpoint
+
+5. ERROR + LOADING STATES on every async store call
+   - fetchProducts, fetchOrders, validateCoupon currently silent on failure
+
+6. PAYMENT FAILURE HANDLING in CheckoutWizard Razorpay handler
+   - Handle payment.failed + modal close; don't leave user on spinner
+
+7. IDEMPOTENCY GUARD on Pay button
+   - Disable after first click, dedupe by razorpay_order_id
+
+8. GALLERY STORE -> move base64 to Supabase Storage
+   - Keep only metadata in localStorage
+
+----------------------------------------
+SHOULD-HAVE
+----------------------------------------
+
+9. RACE CONDITIONS -> Supabase RPCs
+   - increment_visitor(), increment_coupon_uses()
+
+10. AUTH STATE PERSISTENCE
+    - Verify OTP session survives reload mid-checkout
+
+11. REMOVE UNUSED ADMIN CODE from frontend bundle
+    - EditProductModal, AddProductModal bundled but never routed
+
+12. ACCESSIBILITY on modals
+    - AuthModal, PopupModal, CartDrawer need:
+      focus trap, Esc-to-close, aria-modal, return-focus
+
+13. SEO META per page
+    - react-helmet for <title>/description
+
+14. CSP + SECURITY HEADERS
+    - vercel.json headers or _headers file
+    - Content-Security-Policy, X-Frame-Options: DENY, Referrer-Policy
+
+15. IMAGE OPTIMIZATION
+    - assets/hero.png unoptimized; use responsive srcset or Supabase transforms
+
+----------------------------------------
+NICE-TO-HAVE
+----------------------------------------
+
+16. Sentry init in main.tsx wired to ErrorBoundary
+17. Vitest scaffolding — cover useCartStore, useCouponStore, CheckoutWizard
+18. PWA / service worker for offline catalog
+19. Bundle analysis — rollup-plugin-visualizer
+
+================================================================================
+ITEMS THAT NEED YOUR ACTION (external to repo)
+================================================================================
+
+- Rotate Razorpay key secret (Razorpay dashboard)
+- Scrub git history:
+    git filter-repo --path apps/backend/.env --invert-paths
+- Configure Supabase RLS policies for all tables (Supabase SQL editor)
+- Hash existing admin passwords in admin_users (one-time migration)
+- Change leaked superadmin password (Admin@1999)
+- Set VITE_API_URL in hosting env vars (Vercel/etc.)
+
+================================================================================
+SUGGESTED PHASE ORDERING (end-to-end)
+================================================================================
+
+Phase 0 — Emergency secret cleanup          (YOU do; I can't)
+Phase 1 — In-repo security fixes
+Phase 2 — Backend hardening
+Phase 3 — Env + config hygiene
+Phase 4 — Data integrity
+Phase 5 — Correctness fixes
+Phase 6 — Shared package + Supabase types
+Phase 7 — Tests + monitoring
+Phase 8 — Frontend polish
+
+----------------------------------------
+Phase 0 — EMERGENCY SECRET CLEANUP (you do)
+----------------------------------------
+
+1. Rotate Razorpay key secret in dashboard
+2. git rm --cached apps/backend/.env
+3. Add .env (and .env.* except .env.example) to root .gitignore
+4. Scrub history: git filter-repo --path apps/backend/.env --invert-paths
+   (coordinate with collaborators before force-push)
+5. Set VITE_API_URL in Vercel/hosting env vars
+6. Change superadmin password (Admin@1999 is leaked via committed bundle)
+
+----------------------------------------
+Phase 1 — IN-REPO SECURITY FIXES
+----------------------------------------
+
+- apps/backend/src/index.ts:63
+    Replace === with crypto.timingSafeEqual for HMAC compare
+- apps/backend/src/index.ts:28-35
+    Add numeric/range validation to amount (reject non-finite, <=0, > sane max)
+- apps/admin/src/App.tsx:59
+    Remove hardcoded superadmin credentials; require DB lookup
+- apps/admin/src/App.tsx:69, pages/Admin.tsx:247-251,
+  components/EditAdminModal.tsx:46
+    Hash admin passwords (bcrypt) before compare/insert/update
+- apps/admin/src/App.tsx:846
+    Use type="password" input
+- apps/backend/src/index.ts
+    Add helmet, express-rate-limit on /api/create-order, explicit CORS allowlist
+- .github/workflows/deploy.yml
+    Bump to actions/checkout@v4, setup-node@v4
+    Add npm run lint + tsc --noEmit steps per workspace
+
+----------------------------------------
+Phase 2 — BACKEND HARDENING
+----------------------------------------
+
+- apps/backend/ — add zod, validate request bodies on both endpoints
+- Add structured logging (pino) + error-handling middleware
+- Add apps/backend/Dockerfile (node:20-alpine, non-root user, healthcheck)
+- Add apps/backend/.env.example:
+    PORT, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, FRONTEND_URL
+- Add apps/backend/package.json scripts: lint, test, typecheck
+
+----------------------------------------
+Phase 3 — ENV + CONFIG HYGIENE
+----------------------------------------
+
+- Add .env.example for apps/frontend + apps/admin:
+    VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_FIREBASE_*, VITE_API_URL
+- Add env validation at app entry (src/lib/env.ts, zod) — fail fast
+- Remove committed build artifacts:
+    git rm -r --cached apps/admin/dist apps/frontend/dist apps/backend/dist
+    git rm --cached apps/*/package-lock.json  (keep root one)
+    git rm --cached **/.DS_Store
+- Add root package.json lint/typecheck scripts (run per-workspace)
+
+----------------------------------------
+Phase 4 — DATA INTEGRITY (biggest win)
+----------------------------------------
+
+- apps/backend/src/index.ts — /api/verify-payment should PERSIST the order
+    (insert into Supabase orders using service-role key held server-side)
+    then return success. Frontend no longer writes orders.
+- apps/frontend/src/components/CheckoutWizard.tsx:281-287
+    Remove client-side createOrder call; trust backend response
+- apps/backend/ — add @supabase/supabase-js + SUPABASE_SERVICE_ROLE_KEY env var
+    (server-only, never bundled)
+- apps/frontend/src/store/useSiteStore.ts:69-77 + useOrderStore.ts:102-105
+    Replace client-side read-modify-write with Supabase RPCs:
+      increment_visitor(), increment_coupon_uses()
+    Add SQL stubs to new supabase/migrations/ dir
+
+----------------------------------------
+Phase 5 — CORRECTNESS FIXES
+----------------------------------------
+
+- apps/*/src/store/useProductStore.ts:35-36
+    Stop generating fake ratings; require DB values or default 0 / hide UI
+- apps/frontend/src/pages/Contact.tsx:25
+    Wire form to Supabase contact_messages insert or endpoint
+- apps/admin/src/store/useProductStore.ts:96-112
+    Replace delete().neq('id', 0) "hack" with Supabase RPC reset_products()
+- apps/admin/src/App.tsx
+    Strip dead storefront code (Cart, Shop, Contact, CheckoutWizard, AuthModal,
+    unused stores) from admin bundle
+
+----------------------------------------
+Phase 6 — SHARED PACKAGE + TYPES
+----------------------------------------
+
+- Create packages/shared/ with package.json + tsconfig.json
+- Move into shared: data/products.ts, lib/firebase.ts, lib/supabase.ts,
+  shared stores, types
+- Generate Supabase types (supabase gen types) into
+    packages/shared/src/types/db.ts
+- Replace `as any` usage in Admin.tsx + stores with generated types
+- Add shared as workspace dependency in both apps
+
+----------------------------------------
+Phase 7 — TESTS + MONITORING
+----------------------------------------
+
+- Add Vitest to apps/backend
+    Tests for create-order + verify-payment (sig correct/incorrect, amount)
+- Minimal frontend test for useCartStore / useOrderStore happy paths
+- Add Sentry init in apps/frontend/src/main.tsx + apps/admin/src/main.tsx
+    wired to ErrorBoundary
+- Add root package.json test script
+
+----------------------------------------
+Phase 8 — FRONTEND POLISH
+----------------------------------------
+
+- Payment failure UI (CheckoutWizard Razorpay handler: payment.failed, modal close)
+- Idempotency guard on Pay button (disable after first click, dedupe by
+  razorpay_order_id)
+- Gallery store -> move base64 to Supabase Storage
+- Accessibility: focus trap, Esc-to-close, aria-modal on AuthModal, PopupModal,
+  CartDrawer
+- SEO meta: react-helmet per-page title/description
+- CSP + security headers via vercel.json headers or _headers
+- Image optimization: responsive srcset or Supabase Storage transforms
+- Remove unused admin code from frontend bundle (EditProductModal, AddProductModal)
+- Bundle analysis: rollup-plugin-visualizer
+
+================================================================================
+PER-APP READINESS SCORE
+================================================================================
+
+frontend  ~60%  — works, but data-integrity risk (client writes orders),
+                 missing VITE_API_URL, fake ratings, no tests/monitoring
+admin    ~30%  — unsafe to ship: hardcoded creds, localStorage "auth",
+                 plaintext passwords, anon-key DB access
+backend   ~20%  — 77-line prototype; no validation/auth/rate-limit/logging/
+                 persistence; committed secret
+shared     0%  — doesn't exist
+
+================================================================================
+END OF SUMMARY
+================================================================================

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
+import bcrypt from 'bcryptjs';
 import { supabase } from '../lib/supabase';
 import './EditAdminModal.css';
 
@@ -41,9 +42,16 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({ admin, onClose, onSave,
     setError('');
 
     try {
+      const update: { phone: string; password_hash?: string; permissions: string[] } = {
+        phone,
+        permissions,
+      };
+      if (password) {
+        update.password_hash = await bcrypt.hash(password, 12);
+      }
       const { data, error: updateError } = await supabase
         .from('admin_users')
-        .update({ phone, password, permissions })
+        .update(update)
         .eq('id', admin.id)
         .select()
         .single();
@@ -84,15 +92,14 @@ const EditAdminModal: React.FC<EditAdminModalProps> = ({ admin, onClose, onSave,
           
           <div className="floating-input-group">
             <input 
-              type="text" 
+              type="password" 
               id="edit-password"
               className="floating-input"
               value={password} 
               onChange={e => setPassword(e.target.value)} 
-              required 
               placeholder=" "
             />
-            <label htmlFor="edit-password" className="floating-label">Password</label>
+            <label htmlFor="edit-password" className="floating-label">New Password (leave blank to keep)</label>
           </div>
 
           {admin.role !== 'superadmin' && (
