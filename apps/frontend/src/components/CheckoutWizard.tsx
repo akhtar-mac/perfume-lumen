@@ -17,7 +17,7 @@ interface CheckoutWizardProps {
 
 const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
   const { items, getCartTotal, clearCart } = useCartStore();
-  const { createOrder, orders, fetchOrders } = useOrderStore();
+  const { orders, fetchOrders } = useOrderStore();
   const { user, profile } = useAuthStore();
   const [step, setStep] = useState<number>(useAuthStore.getState().user ? 3 : 1);
   
@@ -214,15 +214,38 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
     
     try {
       if (paymentMethod === 'cod') {
-        // Immediate processing for COD
-        if (user) {
-          await createOrder(finalTotal, items.map(item => ({
-            id: item.id, title: item.title, price: item.price, quantity: item.quantity, image: item.image
-          })), paymentMethod, shippingFee, couponCode.trim() ? couponCode : undefined);
+        // COD: create order via backend (server-side persistence)
+        const apiUrl = env.VITE_API_URL;
+        const codResponse = await fetch(`${apiUrl}/api/create-cod-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user?.uid,
+            items: items.map(item => ({
+              id: item.id, title: item.title, price: item.price, quantity: item.quantity, image: item.image
+            })),
+            total: finalTotal,
+            shippingFee,
+            couponCode: couponCode.trim() ? couponCode : undefined,
+            shippingAddress: selectedAddress ? {
+              name: selectedAddress.name || profile?.full_name || '',
+              phone: selectedAddress.phone || profile?.phone || '',
+              address: selectedAddress.street1 || '',
+              city: selectedAddress.city || '',
+              pincode: selectedAddress.pincode || '',
+            } : undefined,
+          })
+        });
+        const codData = await codResponse.json();
+        if (codData.success) {
+          await fetchOrders();
+          setIsProcessing(false);
+          setStep(5);
+          clearCart();
+        } else {
+          alert('Failed to place order. Please try again.');
+          setIsProcessing(false);
         }
-        setIsProcessing(false);
-        setStep(5);
-        clearCart();
         return;
       }
 
@@ -265,27 +288,41 @@ const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onClose }) => {
           color: '#1A1A1A'
         },
         handler: async function (response: any) {
-          // 4. On success, verify payment signature on backend
+          // 4. On success, verify payment signature on backend — backend persists the order
           const apiUrl = env.VITE_API_URL;
+          const orderPayload = {
+            userId: user?.uid,
+            items: items.map(item => ({
+              id: item.id, title: item.title, price: item.price, quantity: item.quantity, image: item.image
+            })),
+            total: finalTotal,
+            paymentMethod,
+            shippingFee,
+            couponCode: couponCode.trim() ? couponCode : undefined,
+            shippingAddress: selectedAddress ? {
+              name: selectedAddress.name || profile?.full_name || '',
+              phone: selectedAddress.phone || profile?.phone || '',
+              address: selectedAddress.street1 || '',
+              city: selectedAddress.city || '',
+              pincode: selectedAddress.pincode || '',
+            } : undefined,
+          };
           const verifyResponse = await fetch(`${apiUrl}/api/verify-payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
+              razorpay_signature: response.razorpay_signature,
+              orderData: orderPayload,
             })
           });
 
           const verifyData = await verifyResponse.json();
 
           if (verifyData.success) {
-            // Payment is verified and secure! Save the order to DB
-            if (user) {
-              await createOrder(finalTotal, items.map(item => ({
-                id: item.id, title: item.title, price: item.price, quantity: item.quantity, image: item.image
-              })), paymentMethod, shippingFee, couponCode.trim() ? couponCode : undefined);
-            }
+            // Order persisted server-side — refresh orders from DB and show success
+            await fetchOrders();
             setIsProcessing(false);
             setStep(5);
             clearCart();

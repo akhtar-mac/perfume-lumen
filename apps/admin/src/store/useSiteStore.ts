@@ -67,13 +67,16 @@ export const useSiteStore = create<SiteStore>()(
     },
 
     incrementVisitor: async () => {
-      // We fetch current count directly from DB to prevent race conditions if possible,
-      // or rely on a simple update. Supabase RPC is better, but a local read+write is fine for demo.
-      const { data } = await supabase.from('site_settings').select('visitor_count').eq('id', 1).single();
-      const newCount = (data?.visitor_count || 0) + 1;
-      
-      await supabase.from('site_settings').update({ visitor_count: newCount }).eq('id', 1);
-      set({ visitorCount: newCount });
+      const { error } = await supabase.rpc('increment_visitor');
+      if (error) {
+        const { data } = await supabase.from('site_settings').select('visitor_count').eq('id', 1).single();
+        const newCount = (data?.visitor_count || 0) + 1;
+        await supabase.from('site_settings').update({ visitor_count: newCount }).eq('id', 1);
+        set({ visitorCount: newCount });
+      } else {
+        const { data } = await supabase.from('site_settings').select('visitor_count').eq('id', 1).single();
+        set({ visitorCount: data?.visitor_count || get().visitorCount });
+      }
     },
 
     toggleBestseller: async (productId) => {

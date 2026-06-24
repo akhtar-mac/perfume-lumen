@@ -26,7 +26,6 @@ interface OrderStore {
   isLoading: boolean;
   fetchOrders: () => Promise<void>;
   subscribeToOrders: () => (() => void);
-  createOrder: (total: number, items: OrderItem[], paymentMethod: string, shippingFee: number, appliedCouponCode?: string) => Promise<void>;
 }
 
 export const useOrderStore = create<OrderStore>((set) => ({
@@ -79,36 +78,4 @@ export const useOrderStore = create<OrderStore>((set) => ({
       supabase.removeChannel(channel);
     };
   },
-
-  createOrder: async (total, items, paymentMethod, shippingFee, appliedCouponCode) => {
-    const user = useAuthStore.getState().user;
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('orders')
-      .insert({
-        user_id: user.uid,
-        total,
-        items,
-        status: paymentMethod === 'cod' ? 'Processing' : 'Paid',
-        payment_method: paymentMethod,
-        shipping_fee: shippingFee,
-        coupon_code: appliedCouponCode || null
-      })
-      .select()
-      .single();
-
-    if (data && !error) {
-      set((state) => ({ orders: [data, ...state.orders] }));
-      
-      // Increment coupon usage if one was applied
-      if (appliedCouponCode) {
-        // Fetch current uses first (or use RPC)
-        const { data: couponData } = await supabase.from('coupons').select('current_uses').eq('code', appliedCouponCode).single();
-        if (couponData) {
-          await supabase.from('coupons').update({ current_uses: couponData.current_uses + 1 }).eq('code', appliedCouponCode);
-        }
-      }
-    }
-  }
 }));

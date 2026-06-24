@@ -89,19 +89,21 @@
 ## Phase 4 — Data Integrity (MOST CRITICAL)
 
 ### 4.1 Move order creation to backend
-- [ ] P4.1.1 Install `@supabase/supabase-js` (apps/backend)
-- [ ] P4.1.2 Create `supabaseAdmin` client with service-role key (server-only) in backend
-- [ ] P4.1.3 Update `VerifyPaymentSchema` to include full `orderData` payload
-- [ ] P4.1.4 `/api/verify-payment`: after signature verify, INSERT order via `supabaseAdmin` → return `{success, orderId}`
-- [ ] P4.1.5 On order write failure: return 500 with `razorpay_payment_id` (do NOT return success)
-- [ ] P4.1.6 Remove client-side Supabase order insert in `CheckoutWizard.tsx:281-287`
-- [ ] P4.1.7 Frontend navigates to success using returned `orderId`
-- [ ] P4.1.8 Add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` to backend `.env.example` (NEVER in frontend)
+- [x] P4.1.1 Install `@supabase/supabase-js` (apps/backend)  ✓
+- [x] P4.1.2 Create `getSupabaseAdmin()` lazy client (server-only) in backend  ✓
+- [x] P4.1.3 Update `VerifyPaymentSchema` to include full `orderData` payload  ✓
+- [x] P4.1.4 `/api/verify-payment`: after signature verify, INSERT order via `getSupabaseAdmin()` → return `{success, orderId}`  ✓
+- [x] P4.1.5 On order write failure: return 500 with `razorpay_payment_id` (do NOT return success)  ✓
+- [x] P4.1.6 Remove client-side Supabase order insert in `CheckoutWizard.tsx:281-287`  ✓ (prepaid + COD)
+- [x] P4.1.7 Frontend uses the returned `orderId` + `fetchOrders()` to refresh  ✓
+- [x] P4.1.8 Add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` to backend `.env.example`  ✓
+- [x] P4.1.9 New `/api/create-cod-order` endpoint for COD orders (server-side persistence)  ✓
+- [x] P4.1.10 Remove `createOrder` from `useOrderStore` (dead code — backend persists now)  ✓
 
 ### 4.2 Fix race conditions with Supabase RPCs
-- [ ] P4.2.1 Migration `002_increment_rpcs.sql`: `increment_visitor()`, `increment_coupon_uses(code)`
-- [ ] P4.2.2 `useSiteStore.incrementVisitor` → `supabase.rpc('increment_visitor')` (frontend + admin)
-- [ ] P4.2.3 `useOrderStore` coupon increment → `supabase.rpc('increment_coupon_uses', {coupon_code})` (frontend + admin)
+- [x] P4.2.1 Migration `002_increment_rpcs.sql`: `increment_visitor()`, `increment_coupon_uses(code)`  ✓
+- [x] P4.2.2 `useSiteStore.incrementVisitor` → `supabase.rpc('increment_visitor')` (frontend + admin, with fallback)  ✓
+- [x] P4.2.3 Coupon increment moved to backend (in verify-payment + create-cod-order handlers)  ✓
 
 ---
 
